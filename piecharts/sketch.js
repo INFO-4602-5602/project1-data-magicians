@@ -7,9 +7,11 @@ var piedata1 =[],  piecolor1 = ['rgb(100,16,20)','rgb(153,131,61)', 'rgb(255,140
 var piedata2 = [],  piecolor2 = ['rgb(100,16,20)','rgb(153,131,61)', 'rgb(255,140,0)','rgb(77,244,255)','rgb(20,204,165)','rgb(25,255,205)'];
 
 var mouseAngle = 0, pieDelta = 0, hover = 0;
+var mouseAngle1 = 0;
+var mouseAngle2 = 0;
 
 var fileName = "overviewData.csv"
-var data1;
+
 
 
 function setup() {
@@ -38,37 +40,56 @@ function setup() {
 }
 
 function draw() {
+background(100);
+fill(256);
+text("DENVER", 820, 20);
+text("ATLANTA", 820, 220);
+text("DALLAS", 820, 420);
+
+console.log(mouseAngle);
+
   for(var i=0,dx=0,dy=0;i<piedata.length;i++,dx=0,dy=0) {
     fill(piecolor[i%6]);
-    if(mouseAngle >= piedata[i][0] && mouseAngle < piedata[i][1]) {
+    if(mouseAngle >= piedata[i][0] && mouseAngle < piedata[i][1] && mouseX>775 && mouseX<925 && mouseY > 30 && mouseY < 180) {
+      fill(255);
       dx = Math.cos((piedata[i][0] + piedata[i][1])/2) * 10;
       dy = Math.sin((piedata[i][0] + piedata[i][1])/2) * 10;
+      text(data[i],20,20);
+      text(data[i],20,40);
     }
     arc(850 + dx, 105 + dy, 150, 150, piedata[i][0], piedata[i][1], PIE);
   }
 
   for(var i=0,dx=0,dy=0;i<piedata1.length;i++,dx=0,dy=0) {
     fill(piecolor1[i%6]);
-    if(mouseAngle >= piedata1[i][0] && mouseAngle < piedata1[i][1]) {
+    if(mouseAngle1 >= piedata1[i][0] && mouseAngle1 < piedata1[i][1] && mouseX>775 && mouseX<925 && mouseY > 230 && mouseY < 380) {
+      fill(255);
       dx = Math.cos((piedata1[i][0] + piedata1[i][1])/2) * 10;
       dy = Math.sin((piedata1[i][0] + piedata1[i][1])/2) * 10;
+      text(data1[i],20,20);
+      text(data1[i],20,40);
     }
     arc(850 + dx, 305 + dy, 150, 150, piedata1[i][0], piedata1[i][1], PIE);
   }
 
   for(var i=0,dx=0,dy=0;i<piedata2.length;i++,dx=0,dy=0) {
     fill(piecolor2[i%6]);
-    if(mouseAngle >= piedata2[i][0] && mouseAngle < piedata[i][1]) {
+    if(mouseAngle2 >= piedata2[i][0] && mouseAngle2 < piedata2[i][1] && mouseX>775 && mouseX<925 && mouseY > 430 && mouseY < 580) {
+      fill(255);
       dx = Math.cos((piedata2[i][0] + piedata2[i][1])/2) * 10;
       dy = Math.sin((piedata2[i][0] + piedata2[i][1])/2) * 10;
+      text(data2[i],20,20);
+      text(data2[i],20,40);
     }
     arc(850 + dx, 505 + dy, 150, 150, piedata2[i][0], piedata2[i][1], PIE);
   }
 }
 
-// function mouseMoved() {
-//   //noStroke(1);
-//   mouseAngle = Math.PI / 2 - Math.atan((320 - mouseX) / (200 - mouseY));
-//   if(mouseY < 200) mouseAngle = mouseAngle + Math.PI;
-//
-// }
+function mouseMoved() {
+  mouseAngle = Math.PI / 2 - Math.atan((850 - mouseX) / (105 - mouseY));
+  if(mouseY < 105) mouseAngle = mouseAngle + Math.PI;
+  mouseAngle1 = Math.PI / 2 - Math.atan((850 - mouseX) / (305 - mouseY));
+  if(mouseY < 305) mouseAngle1 = mouseAngle1 + Math.PI;
+  mouseAngle2 = Math.PI / 2 - Math.atan((850 - mouseX) / (505 - mouseY));
+  if(mouseY < 505) mouseAngle2 = mouseAngle2 + Math.PI;
+}
