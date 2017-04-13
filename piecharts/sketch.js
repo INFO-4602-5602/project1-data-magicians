@@ -2,17 +2,15 @@ var data = [48.96,47.268,27.18,156.78,11.3,68.512];
 var data1 = [85.212,54.144,35.1,23.364,31.716,130.464];
 var data2 = [94.5,50.796,46.512,12.168,29.844,126.18];
 
-var piedata = [], piecolor = ['rgb(100,16,20)','rgb(153,131,61)', 'rgb(255,140,0)','rgb(77,244,255)','rgb(20,204,165)','rgb(25,255,205)'];
-var piedata1 =[],  piecolor1 = ['rgb(100,16,20)','rgb(153,131,61)', 'rgb(255,140,0)','rgb(77,244,255)','rgb(20,204,165)','rgb(25,255,205)'];
-var piedata2 = [],  piecolor2 = ['rgb(100,16,20)','rgb(153,131,61)', 'rgb(255,140,0)','rgb(77,244,255)','rgb(20,204,165)','rgb(25,255,205)'];
+var piedata = [], piecolor = ['rgb(82,70,86)','rgb(207,71,71)', 'rgb(234,122,88)','rgb(228,220,203)','rgb(77,244,255)','rgb(25,255,205)'];
+var piedata1 =[],  piecolor1 = ['rgb(82,70,86)','rgb(207,71,71)', 'rgb(234,122,88)','rgb(228,220,203)','rgb(77,244,255)','rgb(25,255,205)'];
+var piedata2 = [],  piecolor2 = ['rgb(82,70,86)','rgb(207,71,71)', 'rgb(234,122,88)','rgb(228,220,203)','rgb(77,244,255)','rgb(25,255,205)'];
 
 var mouseAngle = 0, pieDelta = 0, hover = 0;
 var mouseAngle1 = 0;
 var mouseAngle2 = 0;
 
 var fileName = "overviewData.csv"
-
-
 
 function setup() {
   createCanvas(1000,600);
@@ -28,7 +26,7 @@ function setup() {
   }
 
   for(var i=0,count=0;i<data1.length;i++) {
-    piedata1.push([Math.PI * 2 * count / total1, Math.PI * 2 * (count + data1[i]) / total1]); //not sure if I should have total, total1, and total2
+    piedata1.push([Math.PI * 2 * count / total1, Math.PI * 2 * (count + data1[i]) / total1]); 
     count += data1[i];
   }
 
