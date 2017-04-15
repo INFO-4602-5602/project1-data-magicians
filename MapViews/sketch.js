@@ -1,22 +1,27 @@
+var counter = 0;
+
 // variables for images
 var mapimg_De;
 var maping_At;
 var maping_Da;
-var clat_De = -104.99;
-var clon_De = 39.73;
-var clat_At = -84.3880;
-var clon_At = 33.7490;
-var clat_Da = -96.7970;
-var clon_Da = 32.7767;
+var clon_De = -104.99;
+var clat_De = 39.73;
+var clon_At = -84.3880;
+var clat_At = 33.7490;
+var clon_Da = -96.7970;
+var clat_Da = 32.7767;
 var clon;
 var clat;
-var ww = 256;
-var hh = 256;
+var ww = 256*5/4;
+var hh = 256*5/4;
 var zoom_De = 8.0;//8.5;
 var zoom_At = 7.5;
 var zoom_Da = 7.0;
 var zoom;
 var access = 'pk.eyJ1IjoibGlmaSIsImEiOiJjajFjeTE1b3kwMGQyMnFwbWp6NW40NTUxIn0.BYl1Zq_s7wKPFdNBu0WpYg';
+var clonNames = [clon_De,clon_At,clon_Da];
+var clatNames = [clat_De,clat_At,clat_Da];
+var zoomNames = [zoom_De,zoom_At,zoom_Da];
 
 // variables for data
 var fileName1 = 'ZayoHackathonData_Buildings.csv';
@@ -29,21 +34,30 @@ var onoffNetwork;
 var cost;
 var profit;
 var proximity;
-var market = 'Dallas';
+var markets = ['Denver','Atlanta','Dallas'];
+var market = 1;
 var maxCost;
 var maxProximity;
 var mark;
 
-// variables for spacing
-var mapSize = 256;
+// variables for maps & spacing
+var mapSize = 256*5/4;
 var mapImageSize = mapSize/2;
 var verticalSpaceBetweenMaps;
 var horizontalSpaceBetweenMaps;
-var overviewSpace = 150;
+var overviewSpace = 200;
 var detailSpace = 200;
-var mapLocs = ['upperLeft', 'upperRight', 'lowerLeft', 'lowerRight'];
+var mapLocs = ['Left', 'Right'];
 var mapCenterXs;
 var mapCenterYs;
+var mapLabels = ['PROFIT','COST'];
+var markName = ['DENVER','ATLANTA','DALLAS'];
+var originalEdgeLat = [];
+var originalEdgeLon = [];
+var smallMapLeftX;
+var smallMapRightX; 
+var smallMapTopY;
+var smallMapBottomY;
 
 // variables for interaction
 var isOverMap = false;
@@ -60,24 +74,24 @@ function preload() {
   
   // pull images from mapbox for each city (512 x 512px)
   mapimg_De = loadImage('https://api.mapbox.com/styles/v1/mapbox/dark-v9/static/' +
-    clat_De + ',' + clon_De + ',' + zoom_De + '/' +
+    clon_De + ',' + clat_De + ',' + zoom_De + '/' +
     ww + 'x' + hh +
     '?access_token=' + access);
     
   mapimg_At = loadImage('https://api.mapbox.com/styles/v1/mapbox/dark-v9/static/' +
-    clat_At + ',' + clon_At + ',' + zoom_At + '/' +
+    clon_At + ',' + clat_At + ',' + zoom_At + '/' +
     ww + 'x' + hh +
     '?access_token=' + access);
     
   mapimg_Da = loadImage('https://api.mapbox.com/styles/v1/mapbox/dark-v9/static/' +
-    clat_Da + ',' + clon_Da + ',' + zoom_Da + '/' +
+    clon_Da + ',' + clat_Da + ',' + zoom_Da + '/' +
     ww + 'x' + hh +
     '?access_token=' + access);
-    
+
 }
 
 function setup() {
-  createCanvas(1000,600);
+  createCanvas(1200,700);
   background(125);
   
   // pull necessary data into arrays
@@ -87,21 +101,36 @@ function setup() {
   cost = buildings.getColumn('Estimated Build Cost');
   maxCost = max(cost);
   profit = cpqs.getColumn('X36 NPV List');
-  proximity = buildings.getColumn('Network Proximity');
-  maxProximity = max(proximity);
+  //proximity = buildings.getColumn('Network Proximity');
+  //maxProximity = max(proximity);
   mark = buildings.getColumn('Market');
   
   // set spacing
-  verticalSpaceBetweenMaps = (height-mapSize*2)/3;
+  verticalSpaceBetweenMaps = ((height-mapSize)*3/5);
   horizontalSpaceBetweenMaps = (width-overviewSpace-detailSpace-mapSize*2)/3;
   mapCenterXs = [overviewSpace+horizontalSpaceBetweenMaps+mapSize/2,
-                   overviewSpace+horizontalSpaceBetweenMaps*2+mapSize*3/2,
-                   overviewSpace+horizontalSpaceBetweenMaps+mapSize/2,
                    overviewSpace+horizontalSpaceBetweenMaps*2+mapSize*3/2];
   mapCenterYs = [verticalSpaceBetweenMaps+mapSize/2,
-                   verticalSpaceBetweenMaps+mapSize/2,
-                   verticalSpaceBetweenMaps*2+mapSize*3/2,
-                   verticalSpaceBetweenMaps*2+mapSize*3/2];
+                   verticalSpaceBetweenMaps+mapSize/2];
+  mapTextXs = [overviewSpace+horizontalSpaceBetweenMaps/2,
+               overviewSpace+horizontalSpaceBetweenMaps*3/2+mapSize];
+  mapTextYs = [verticalSpaceBetweenMaps+mapSize/2,
+               verticalSpaceBetweenMaps+mapSize/2];
+  
+  // small map coords           
+  smallMapLeftX = width-detailSpace-mapSize/2-horizontalSpaceBetweenMaps;
+  smallMapRightX = width-detailSpace-mapSize/2-horizontalSpaceBetweenMaps+mapSize/2; 
+  smallMapTopY = (verticalSpaceBetweenMaps-mapSize/2)/2;
+  smallMapBottomY = (verticalSpaceBetweenMaps-mapSize/2)/2+mapSize/2;
+               
+  // get min/max lat/long for each market
+  for(i=0; i<3; i++) {
+    var centerX = mercX(clonNames[i], zoomNames[i]);
+    var centerY = mercY(clatNames[i], zoomNames[i]);
+    originalEdgeLat[i] = invMercY(-mapSize/2,zoomNames[i],centerY);
+    originalEdgeLon[i] = invMercX(-mapSize/2,zoomNames[i],centerX);
+  }
+
 }
 
 function draw() {
@@ -113,55 +142,92 @@ function draw() {
   rect(0,0,overviewSpace,height);
   
   // draw picture
-  if(market === 'Denver'){
+  if(markets[market] === 'Denver'){
     imageMode(CORNER);
-    image(mapimg_De,width-detailSpace+(detailSpace-mapImageSize)/2,
-                    verticalSpaceBetweenMaps,mapSize/2,mapSize/2);
-    clon = clon_De;
-    clat = clat_De;
-    zoom = zoom_De;
+    image(mapimg_De,smallMapLeftX,smallMapTopY,mapSize/2,mapSize/2);
+    if(counter === 0){
+      clon = clon_De;
+      clat = clat_De;
+      zoom = zoom_De;
+    }
   }
   
-  if(market === 'Atlanta'){
+  if(markets[market] === 'Atlanta'){
     imageMode(CORNER);
-    image(mapimg_At,width-detailSpace+(detailSpace-mapImageSize)/2,
-                    verticalSpaceBetweenMaps,mapSize/2,mapSize/2);
-    clon = clon_At;
-    clat = clat_At;
-    zoom = zoom_At;
+    image(mapimg_At,smallMapLeftX,smallMapTopY,mapSize/2,mapSize/2);
+    if(counter === 0){
+      clon = clon_At;
+      clat = clat_At;
+      zoom = zoom_At;
+    }
   }
   
-  if(market === 'Dallas'){
+  if(markets[market] === 'Dallas'){
     imageMode(CORNER);
-    image(mapimg_Da,width-detailSpace+(detailSpace-mapImageSize)/2,
-                    verticalSpaceBetweenMaps,mapSize/2,mapSize/2);
-    clon = clon_Da;
-    clat = clat_Da;
-    zoom = zoom_Da;
+    image(mapimg_Da,smallMapLeftX,smallMapTopY,mapSize/2,mapSize/2);
+    if(counter === 0){
+      clon = clon_Da;
+      clat = clat_Da;
+      zoom = zoom_Da;
+    }
   }
   
+  // draw rectangle on image to track where map is
+  strokeWeight(1);
+  stroke(200);
+  noFill();
+  var centerX = mercX(clon, zoom);
+  var centerY = mercY(clat, zoom);
+  var topEdgeLat = invMercY(-mapSize/2,zoom,centerY);
+  var leftEdgeLon = invMercX(-mapSize/2,zoom,centerX);
+  var rightEdgeLon = invMercX(mapSize/2,zoom,centerX);
+  var edgeLocY = map(topEdgeLat,originalEdgeLat[market],(clatNames[market]-originalEdgeLat[market])*2+originalEdgeLat[market],
+                     smallMapTopY,smallMapBottomY);
+  var leftEdgeLocX = map(leftEdgeLon,originalEdgeLon[market],(clonNames[market]-originalEdgeLon[market])*2+originalEdgeLon[market],
+                     smallMapLeftX,smallMapRightX);
+  var rightEdgeLocX = map(rightEdgeLon,originalEdgeLon[market],(clonNames[market]-originalEdgeLon[market])*2+originalEdgeLon[market],
+                     smallMapLeftX,smallMapRightX);
+  var edgeLength = rightEdgeLocX - leftEdgeLocX;
+  rect(leftEdgeLocX,edgeLocY,edgeLength,edgeLength);
+
   //use web mercator equations
   isOverMap = mouseOverMap();
-  for(j=0; j<4; j++){
+  //imageMode(CENTER);
+  //image(mapimg_De,mapCenterXs[1],mapCenterYs[1],mapSize,mapSize);
+  for(j=0; j<2; j++){
     mapGraphs(mapCenterXs[j],mapCenterYs[j],clon,clat,zoom,mapLocs[j],j)
   }
   
   // draw rectangles for edges of map boxes
   strokeWeight(1);
-  stroke(0);
+  stroke(200);
   noFill();
   rect(overviewSpace+horizontalSpaceBetweenMaps,verticalSpaceBetweenMaps,
-       mapSize,mapSize);
-  rect(overviewSpace+horizontalSpaceBetweenMaps,
-       verticalSpaceBetweenMaps*2+mapSize,
        mapSize,mapSize);
   rect(overviewSpace+horizontalSpaceBetweenMaps*2+mapSize,
        verticalSpaceBetweenMaps,
        mapSize,mapSize);
-  rect(overviewSpace+horizontalSpaceBetweenMaps*2+mapSize,
-       verticalSpaceBetweenMaps*2+mapSize,
-       mapSize,mapSize);
   
+  // draw labels
+  for(i=0; i<2; i++){
+    push();
+    translate(mapTextXs[i],mapTextYs[i]);
+    fill(200);
+    rotate(-PI/2);
+    textAlign(CENTER,CENTER);
+    textSize(14);
+    textStyle(NORMAL);
+    text(mapLabels[i],0,0);
+    pop();
+  }
+  
+  fill(200);
+  textAlign(LEFT,CENTER);
+  textSize(60);
+  textStyle(NORMAL);
+  text(markName[market],overviewSpace+horizontalSpaceBetweenMaps,verticalSpaceBetweenMaps/2);
+
+  counter += 1;
 }
 
 
@@ -172,20 +238,20 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom,mapLoc,j){
 
   push();
   translate(mapCenterX,mapCenterY);
-  
+
   // center for lat and long - for Denver
   var cx = mercX(clon, zoom);
   var cy = mercY(clat, zoom);
 
   var radius;
   for(i=0; i<buildings.getRowCount(); i++){
-    if(market === mark[i]){
+    if(markets[market] === mark[i]){
       // pull lat and long for data point
       lat = lats[i];
       lon = lons[i];
-      var x = mercY(lon, zoom) - cy;
-     var y = mercX(lat, zoom) - cx;
-     if ((mouseX-mapCenterX <= x+2) && (mouseX-mapCenterX >= x-2) &&
+      var y = mercY(lat, zoom) - cy;
+      var x = mercX(lon, zoom) - cx;
+      if ((mouseX-mapCenterX <= x+2) && (mouseX-mapCenterX >= x-2) &&
          (mouseY-mapCenterY <= y+2) && (mouseY-mapCenterY >= y-2)){
         strokeWeight(2);
         stroke(255);
@@ -203,47 +269,23 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom,mapLoc,j){
         noStroke();
         radius = 2;
       }
-      if((x>-128) && (x<128) && (y>-128) && (y<128)){
+      if((x>-mapSize/2) && (x<mapSize/2) && (y>-mapSize/2) && (y<mapSize/2)){
         var pointcolor;
-        if(mapLoc === 'upperLeft'){
-          if(onoffNetwork[i] === 'Not on Zayo Network'){
-            fill(255,0,255,100);
-          }
-          else if(onoffNetwork[i] === "On Zayo Network"){
-            fill(0,100);
-          }
-          //noStroke();
-          ellipse(x, y, radius);
-        }
       
-      // if(mapLoc === 'upperRight'){
-      //   if(onoffNetwork[i] === 'Not on Zayo Network'){
-      //     //stroke(255, 0, 255);
-      //     fill(255,0,255,100);
+      // if(mapLoc === 'Left'){
+      //   if(profit[i] > maxProfit/1000){
+      //     fill(0,0,255,100);
       //   }
-      //   else if(onoffNetwork[i] === "On Zayo Network"){
-      //     fill(255,100);
+      //   else {
+      //     fill(0,100);
       //   }
-      //   noStroke();
-      //   ellipse(x, y, 2);
+      //   ellipse(x, y, radius);
       // }
       
-        if(mapLoc === 'lowerLeft'){
+        if(mapLoc === 'Right'){
           //pointColor = map(cost[i],0,max(cost),0,255)
           if((cost[i] > maxCost/1000)){
             fill(0,255,255,100);
-          }
-          else {
-            fill(0,100);
-          }
-          ellipse(x, y, radius);
-        }
-      
-        if(mapLoc === 'lowerRight'){
-          //pointColor = map(proximity[i],0,maxProximity,0,255);
-          //fill(255,255,0,100);
-          if((cost[i] > maxCost/1000)){
-            fill(255,255,0,100);
           }
           else {
             fill(0,100);
@@ -258,14 +300,14 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom,mapLoc,j){
 }
 
 // equations found wikipedia for web mercator - used from https://www.youtube.com/watch?v=ZiYdOwOrGyc&t=476s - p5.js tutorial
-function mercY(lon, zoom) {
+function mercX(lon, zoom) {
   lon = radians(lon);
   var a = (256 / PI) * pow(2, zoom);//(256 / PI) * pow(2, zoom);
   var b = lon + PI;
   return a * b;
 }
 
-function mercX(lat, zoom) {
+function mercY(lat, zoom) {
   lat = radians(lat);
   var a = (256 / PI) * pow(2, zoom);//(256 / PI) * pow(2, zoom);
   var b = tan(PI / 4 + lat / 2);
@@ -273,12 +315,26 @@ function mercX(lat, zoom) {
   return a * c;
 }
 
+// inverse mercator functions to go from pixel on image to lat/long
+function invMercX(x,zoom,cx) {
+  var a = ((x+cx) * PI) / (256 * pow(2, zoom));
+  var b = degrees(a - PI);
+  return b;
+}
+
+function invMercY(y,zoom,cy) {
+  var a = ((y+cy) * PI) / (256 * pow(2, zoom));
+  var b = atan(exp(PI-a));
+  var c = 2 * (b - (PI / 4));
+  return degrees(c);
+}
+
 function mouseWheel(event){
   if(isOverMap){
     var amount = map(event.delta,-5000,5000,-5,5);
-    zoom_De += amount;
-    zoom_At += amount;
-    zoom_Da += amount;
+    if((zoom + amount) >= zoomNames[market]){
+      zoom += amount;
+    }
   }
   return false;
 }
@@ -298,12 +354,29 @@ function mouseDragged() {
   if(locked){
     var amountX = map(xOffset-mouseX,-100,100,-0.1,0.1)
     var amountY = map(yOffset-mouseY,100,-100,-0.1,0.1)
-    clat_De += amountX;
-    clon_De += amountY;
-    clat_At += amountX;
-    clon_At += amountY;
-    clat_Da += amountX;
-    clon_Da += amountY;
+    
+    // check if new lat and long edges are in range
+    var centerX = mercX(clon+amountX, zoom);
+    var centerY = mercY(clat+amountY, zoom);
+    var topEdgeLat = invMercY(-mapSize/2,zoom,centerY);
+    var bottomEdgeLat = invMercY(mapSize/2,zoom,centerY);
+    var leftEdgeLon = invMercX(-mapSize/2,zoom,centerX);
+    var rightEdgeLon = invMercX(mapSize/2,zoom,centerX);
+    
+    var topEdgeLocY = map(topEdgeLat,originalEdgeLat[market],(clatNames[market]-originalEdgeLat[market])*2+originalEdgeLat[market],
+                     smallMapTopY,smallMapBottomY);
+    var bottomEdgeLocY = map(bottomEdgeLat,originalEdgeLat[market],(clatNames[market]-originalEdgeLat[market])*2+originalEdgeLat[market],
+                     smallMapTopY,smallMapBottomY);
+    var leftEdgeLocX = map(leftEdgeLon,originalEdgeLon[market],(clonNames[market]-originalEdgeLon[market])*2+originalEdgeLon[market],
+                     smallMapLeftX,smallMapRightX);
+    var rightEdgeLocX = map(rightEdgeLon,originalEdgeLon[market],(clonNames[market]-originalEdgeLon[market])*2+originalEdgeLon[market],
+                     smallMapLeftX,smallMapRightX);
+    
+    if((leftEdgeLocX >= smallMapLeftX) && (rightEdgeLocX <= smallMapRightX) && 
+       (topEdgeLocY >= smallMapTopY) && (bottomEdgeLocY <= smallMapBottomY)){
+      clat += amountY;
+      clon += amountX;
+    }
   }
 }
 
@@ -316,19 +389,11 @@ function mouseOverMap() {
      (mouseX<overviewSpace+horizontalSpaceBetweenMaps+mapSize) &&
      (mouseY>verticalSpaceBetweenMaps) && 
      (mouseY<verticalSpaceBetweenMaps+mapSize)) || 
-     ((mouseX>overviewSpace+horizontalSpaceBetweenMaps) && 
-     (mouseX<overviewSpace+horizontalSpaceBetweenMaps+mapSize) &&
-     (mouseY>verticalSpaceBetweenMaps*2+mapSize) && 
-     (mouseY<verticalSpaceBetweenMaps*2+mapSize*2)) || 
      ((mouseX>overviewSpace+horizontalSpaceBetweenMaps*2+mapSize) && 
      (mouseX<overviewSpace+horizontalSpaceBetweenMaps*2+mapSize*2) &&
      (mouseY>verticalSpaceBetweenMaps) && 
-     (mouseY<verticalSpaceBetweenMaps+mapSize)) || 
-     ((mouseX>overviewSpace+horizontalSpaceBetweenMaps*2+mapSize) && 
-     (mouseX<overviewSpace+horizontalSpaceBetweenMaps*2+mapSize*2) &&
-     (mouseY>verticalSpaceBetweenMaps*2+mapSize) && 
-     (mouseY<verticalSpaceBetweenMaps*2+mapSize*2))) {
-       return true;
+     (mouseY<verticalSpaceBetweenMaps+mapSize))) { 
+     return true;
      }
   else
     return false;
