@@ -6,8 +6,6 @@ import statistics as stats
 denProfit, atlProfit, dalProfit = [], [], []
 
 
-
-
 #function only takes strings with numbers, ie does not handle blanks
 #identifies dollar sign and comma only, and then converts to float
 
@@ -48,7 +46,6 @@ with open('ZayoHackathonData_CPQs.csv', newline='') as csvfile:
         elif (row[8] == "Atlanta"):
             if (numCheck(row[6])):
                 atlProfit.append(toFloat(row[6]))
-
 
 
 
@@ -124,10 +121,13 @@ for i in range(0, len(outData)):
 print(outData)
 
 
+
+
 #DATA OUT
 
 with open('overviewData.csv', 'w') as out:
     writer = csv.writer(out)
+
     writer.writerow(columnLabels)
 
     for row in outData:
