@@ -24,21 +24,29 @@ var clatNames = [clat_De,clat_At,clat_Da];
 var zoomNames = [zoom_De,zoom_At,zoom_Da];
 
 // variables for data
-var fileName1 = 'ZayoHackathonData_Buildings.csv';
-var fileName2 = 'ZayoHackathonData_CPQs.csv';
-var buildings;
-var cpqs;
+var atlantaFile = 'AtlantaData.csv';
+var denverFile = 'DenverData.csv';
+var dallasFile = 'DallasData.csv';
+var denver;
+var atlanta;
+var dallas;
+var marketData;
 var lats;
 var lons;
 var onoffNetwork;
 var cost;
 var profit;
 var proximity;
+var oppClosed;
+var statusData;
 var markets = ['Denver','Atlanta','Dallas'];
-var market = 1;
-var maxCost;
+var market = 0;
+var maxCost = 1000000;
+var maxProfit = 1000000;
 var maxProximity;
-var mark;
+var nonCustomers = [];
+//var nonCustomers = new p5.Table([]);
+//var mark;
 
 // variables for maps & spacing
 var mapSize = 256*5/4;
@@ -67,10 +75,16 @@ var yOffset = 0;
 var onDot = false;
 var onDoti = [];
 var onMapj;
+var checkBox = [false,false,false];
+var clickedBox = false;
+var isOverBox = false;
+var boxi = [false,false,false];
 
 function preload() {
-  buildings = loadTable(fileName1, "csv", "header");
-  cpqs = loadTable(fileName2, "csv", "header");
+  denver = loadTable(denverFile, "csv", "header");
+  atlanta = loadTable(atlantaFile, "csv", "header");
+  dallas = loadTable(dallasFile, "csv", "header");
+  marketData = [denver,atlanta,dallas];
   
   // pull images from mapbox for each city (512 x 512px)
   mapimg_De = loadImage('https://api.mapbox.com/styles/v1/mapbox/dark-v9/static/' +
@@ -93,17 +107,6 @@ function preload() {
 function setup() {
   createCanvas(1200,700);
   background(125);
-  
-  // pull necessary data into arrays
-  lats = buildings.getColumn('Latitude');
-  lons = buildings.getColumn('Longitude');
-  onoffNetwork = buildings.getColumn('On Zayo Network Status');
-  cost = buildings.getColumn('Estimated Build Cost');
-  maxCost = max(cost);
-  profit = cpqs.getColumn('X36 NPV List');
-  //proximity = buildings.getColumn('Network Proximity');
-  //maxProximity = max(proximity);
-  mark = buildings.getColumn('Market');
   
   // set spacing
   verticalSpaceBetweenMaps = ((height-mapSize)*3/5);
@@ -189,14 +192,6 @@ function draw() {
                      smallMapLeftX,smallMapRightX);
   var edgeLength = rightEdgeLocX - leftEdgeLocX;
   rect(leftEdgeLocX,edgeLocY,edgeLength,edgeLength);
-
-  //use web mercator equations
-  isOverMap = mouseOverMap();
-  //imageMode(CENTER);
-  //image(mapimg_De,mapCenterXs[1],mapCenterYs[1],mapSize,mapSize);
-  for(j=0; j<2; j++){
-    mapGraphs(mapCenterXs[j],mapCenterYs[j],clon,clat,zoom,mapLocs[j],j)
-  }
   
   // draw rectangles for edges of map boxes
   strokeWeight(1);
@@ -208,6 +203,74 @@ function draw() {
        verticalSpaceBetweenMaps,
        mapSize,mapSize);
   
+  // draw slider bars
+  var sliderXs = [overviewSpace+horizontalSpaceBetweenMaps,
+                  overviewSpace+horizontalSpaceBetweenMaps+mapSize,
+                  overviewSpace+horizontalSpaceBetweenMaps*2+mapSize,
+                  overviewSpace+horizontalSpaceBetweenMaps*2+mapSize*2];
+  var sliderY = verticalSpaceBetweenMaps+horizontalSpaceBetweenMaps/2+mapSize;
+  var sliderWidth = 10;
+  var sliderHeight = 30;
+  line(sliderXs[0],sliderY,sliderXs[1],sliderY);
+  line(sliderXs[2],sliderY,sliderXs[3],sliderY);
+  fill(200);
+  noStroke();
+  rect(sliderXs[0],sliderY-horizontalSpaceBetweenMaps/4,sliderWidth,sliderHeight);
+  rect(sliderXs[1]-9,sliderY-horizontalSpaceBetweenMaps/4,sliderWidth,sliderHeight);
+  rect(sliderXs[2],sliderY-horizontalSpaceBetweenMaps/4,sliderWidth,sliderHeight);
+  rect(sliderXs[3]-9,sliderY-horizontalSpaceBetweenMaps/4,sliderWidth,sliderHeight);
+  fill(200);
+  noStroke();
+  textAlign(CENTER,TOP);
+  textSize(12);
+  textStyle(NORMAL);
+  text(0, sliderXs[0]+5,sliderY-horizontalSpaceBetweenMaps/4+35);
+  text(maxProfit, sliderXs[1]-9+5,sliderY-horizontalSpaceBetweenMaps/4+35);
+  text(0, sliderXs[2]+5,sliderY-horizontalSpaceBetweenMaps/4+35);
+  text(maxCost, sliderXs[3]-9+5,sliderY-horizontalSpaceBetweenMaps/4+35);
+       
+  // boxes for filters on map
+  var boxSize = 20;
+  var boxesXs = [overviewSpace+horizontalSpaceBetweenMaps,
+                 overviewSpace+horizontalSpaceBetweenMaps+250,
+                 overviewSpace+horizontalSpaceBetweenMaps+500];
+  var boxesY = verticalSpaceBetweenMaps+horizontalSpaceBetweenMaps*3/2+mapSize;
+  var checkBoxLabels = ['On Network','Open Opportunity','Details of Selected Group'];
+  for(i=0; i<boxesXs.length; i++){
+    stroke(200);
+    isOverBox = mouseOverBox(boxesXs[i],boxesY,boxSize);
+    if(isOverBox){
+      boxi[i] = true;
+      strokeWeight(2);
+      fill(0,100);
+    }
+    else{
+      strokeWeight(1);
+      noFill();
+    }
+    console.log(isOverBox);
+    console.log(boxi[i]);
+    rect(boxesXs[i],boxesY,boxSize,boxSize);
+    if(checkBox[i]){
+      line(boxesXs[i],boxesY,boxesXs[i]+boxSize,boxesY+boxSize);
+      line(boxesXs[i]+boxSize,boxesY,boxesXs[i],boxesY+boxSize);
+    }
+    fill(200);
+    noStroke();
+    textStyle(NORMAL);
+    textSize(16);
+    textAlign(LEFT,CENTER);
+    text(checkBoxLabels[i], boxesXs[i]+30, boxesY+boxSize/2);
+  }
+  
+  //use web mercator equations
+  isOverMap = mouseOverMap();
+  //imageMode(CENTER);
+  //image(mapimg_De,mapCenterXs[1],mapCenterYs[1],mapSize,mapSize);
+  for(j=0; j<2; j++){
+    mapGraphs(mapCenterXs[j],mapCenterYs[j],clon,clat,zoom,mapLocs[j],j)
+  }
+  
   // draw labels
   for(i=0; i<2; i++){
     push();
@@ -215,7 +278,7 @@ function draw() {
     fill(200);
     rotate(-PI/2);
     textAlign(CENTER,CENTER);
-    textSize(14);
+    textSize(20);
     textStyle(NORMAL);
     text(mapLabels[i],0,0);
     pop();
@@ -244,11 +307,15 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom,mapLoc,j){
   var cy = mercY(clat, zoom);
 
   var radius;
-  for(i=0; i<buildings.getRowCount(); i++){
-    if(markets[market] === mark[i]){
-      // pull lat and long for data point
-      lat = lats[i];
-      lon = lons[i];
+  var row;
+  for(i=0; i<marketData[market].getRowCount(); i++){
+    row = marketData[market].getRow(i);
+    var isActive = row.get('Status');
+    var isOppClosed = row.get('IsClosed');
+    if((isActive != 'Active') && (isOppClosed != false)){
+      // convert long,lat to x,y
+      var lat = row.get('Latitude');
+      var lon = row.get('Longitude');
       var y = mercY(lat, zoom) - cy;
       var x = mercX(lon, zoom) - cx;
       if ((mouseX-mapCenterX <= x+2) && (mouseX-mapCenterX >= x-2) &&
@@ -271,25 +338,26 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom,mapLoc,j){
       }
       if((x>-mapSize/2) && (x<mapSize/2) && (y>-mapSize/2) && (y<mapSize/2)){
         var pointcolor;
-      
-      // if(mapLoc === 'Left'){
-      //   if(profit[i] > maxProfit/1000){
-      //     fill(0,0,255,100);
-      //   }
-      //   else {
-      //     fill(0,100);
-      //   }
-      //   ellipse(x, y, radius);
-      // }
+        var onoffNet = row.get('On Zayo Network Status (Buildings)')
+        if(onoffNet === 'On Zayo Network'){
+          strokeWeight(1);
+          stroke(255,255,0);
+        }
+        else {
+          noStroke();
+        }
+        
+        var profit = row.get('X36 NPV List');
+        if((mapLoc === 'Left') && (profit != null)){
+          var val = int(map(profit,0,maxProfit,0,255));
+          fill(255,val,255);
+          ellipse(x, y, radius);
+        }
       
         if(mapLoc === 'Right'){
-          //pointColor = map(cost[i],0,max(cost),0,255)
-          if((cost[i] > maxCost/1000)){
-            fill(0,255,255,100);
-          }
-          else {
-            fill(0,100);
-          }
+          var cost = row.get('Estimated Build Cost');
+          val = int(map(cost,0,maxCost,0,255));
+          fill(val,255,255);
           ellipse(x, y, radius);
         }
       }
@@ -348,6 +416,20 @@ function mousePressed() {
   }
   xOffset = mouseX;
   yOffset = mouseY;
+  for(i=0;i<3;i++){
+    if(isOverBox && boxi[i]){
+    // clickedBox = true;
+      if(checkBox[i]){
+        checkBox[i] = false;
+      }
+      else{
+       checkBox[i] = true;
+      }
+    }
+  }
+  // else{
+    // clickedBox = false;
+  // }
 }
 
 function mouseDragged() {
@@ -397,4 +479,13 @@ function mouseOverMap() {
      }
   else
     return false;
+}
+
+function mouseOverBox(boxX,boxY,boxSize) {
+  if((mouseX>boxX) && (mouseX<(boxX+boxSize)) && (mouseY>boxY) && (mouseY<(boxY+boxSize))){
+    return true;
+  }
+  else{
+    return false;
+  }
 }
