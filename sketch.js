@@ -1,9 +1,12 @@
 
-var fileName = "overviewData.csv";
+var fileName = "text.csv";
 var data;
 
-var numGraphs = 3;
+var numGraphs = 2;
 var numMarkets;
+
+var widthScreen = 1300;
+var heightScreen = 700;
   
 var verticalMargin;
 var horizontalMargin;
@@ -17,28 +20,33 @@ var graphWidth;
 
 var barColumns = ['medianProfit','medianBuildingCost','medianProximit'];
 var barColors = ['#ff00ff','#99ff33','#00ccff'];
-//var barMedianColumns = ['medianProfit','medianBuildingCost','medianProximit'];
-//var barAvgColumns =
-//['averageProfit','averageBuildingCost','averageProximity'];
-//var barSumColumns =
-//['sumProfit','sumBuildingCost','sumProximity'];
+var rgbColors = [[255, 179, 255],[218, 255, 179],[179, 240, 255]];
+var graphTitle = "MEDIAN VALUES";
+var oppColumns = ['medianOppProf','medianOppCost','medianOppProx'];
+var opportunityFilterBool = false;
+var networkColumns = ['medianNetworkProf', 'medianNetworkCost'];
+var onNetworkBool = false;
+
 
 var onBar = false;
+var prevVals;
+var preVal;
 
 function preload() {
   data = loadTable(fileName, "csv", "header");
 }
 
 function setup() {
-  createCanvas(1000,600);
+  createCanvas(widthScreen,heightScreen);
   background(100);
     
   //set sizes to be interactive with window size
-  verticalMargin = height/13;
+  verticalMargin = height/12;
   horizontalMargin = width/8;
   yAxisLabel = horizontalMargin/4
   spaceBetweenGraphs = (height-2*height/6)/5;
-  graphHeight = (height-2*height/6-spaceBetweenGraphs*2)/2;
+  graphHeight = (height/3);
+  console.log(graphHeight);
   graphWidth = width-2*width/6;
   spaceBetweenBars = graphWidth/20;
   barWidth = (graphWidth-spaceBetweenBars*4)/3;
@@ -49,59 +57,133 @@ function setup() {
 
 function draw() {
   background(100);
-  var lineY = [verticalMargin,verticalMargin+graphHeight]; 
-  var tempLineY = [verticalMargin,verticalMargin+graphHeight]; 
+  push();
+  fill(255);
+  textSize(35);
+  textAlign(CENTER);
+  textStyle(NORMAL);
+  text(graphTitle, widthScreen/2.2, heightScreen - (heightScreen/1.07));
+  pop();
+	
+  var lineY = [verticalMargin+15,verticalMargin+graphHeight]; 
 
   //intialize filter boxes
   filterAvg();
   filterMedian();
   filterSum();
+  filterOpportunity();
+  filterNetworkStatus();
     
   for(i=0; i<numGraphs; i++){
-    barTicks(graphHeight,tempLineY, lineY);
       
     // initialize the bar titles
     textSize(14);  
     fill(255);
-    text('Denver', horizontalMargin+spaceBetweenBars+50, lineY[1] + 15);
-    text('Atlanta', horizontalMargin+spaceBetweenBars+barWidth+spaceBetweenBars+50, lineY[1] + 15);
-    text('Dallas', horizontalMargin+spaceBetweenBars+barWidth+spaceBetweenBars+barWidth+spaceBetweenBars+50, lineY[1] + 15);
-    
+	if (i==1){
+    push();
+    textAlign(CENTER);
+	textSize(22);
+	textStyle(NORMAL);
+    text('DENVER', horizontalMargin+spaceBetweenBars+barWidth/2, lineY[1] + 30);
+    text('ATLANTA', horizontalMargin+spaceBetweenBars+barWidth+spaceBetweenBars+barWidth/2, lineY[1] + 30);
+    text('DALLAS', horizontalMargin+spaceBetweenBars+barWidth+spaceBetweenBars+barWidth+spaceBetweenBars+barWidth/2, lineY[1] + 30);
+	pop();
+	}
+	  
     if (i==0){
-        text('Cost', yAxisLabel, graphHeight);
+		push();
+     	translate(yAxisLabel,heightScreen/4);
+     	fill(200);
+     	rotate(-PI/2);
+     	textAlign(CENTER,CENTER);
+     	textSize(22);
+     	textStyle(NORMAL);
+     	text('BUILDING COST',0,0);
+     	pop();	
     }
     else if (i==1){
-        text('Profit', yAxisLabel, graphHeight*2+spaceBetweenGraphs);
+		push();
+     	translate(yAxisLabel,heightScreen - (heightScreen/4)-20);
+     	fill(200);
+     	rotate(-PI/2);
+     	textAlign(CENTER,CENTER);
+     	textSize(22);
+     	textStyle(NORMAL);
+     	text('NET PRESENT VALUE',0,0);
+     	pop();	
     }
-    else if (i==2){
-        text('Proximity', yAxisLabel, graphHeight*3+spaceBetweenGraphs*2);
-    }
-          
+	      
     //make lines for axes
     strokeWeight(1);
     stroke(0);
     line(horizontalMargin,lineY[0],horizontalMargin,lineY[1]);
     line(horizontalMargin,lineY[1],horizontalMargin+graphWidth,lineY[1]);
+	
+	//add graph tick
+	strokeWeight(1);
+	stroke(0);
+	line(horizontalMargin-5,lineY[1],horizontalMargin,lineY[1]);
+	textStyle(NORMAL);
+    text('0',horizontalMargin-15,lineY[1]);
+	line(horizontalMargin-5,lineY[0],horizontalMargin,lineY[0]);	 
       
     //draw bars and implement interaction
+
     var vals = data.getColumn(barColumns[i]);
+	var oppVals = data.getColumn(oppColumns[i]);
+	//var networkVals = data.getColumn(networkColumns[i]);
     var rectX = [horizontalMargin+spaceBetweenBars,
                  horizontalMargin+spaceBetweenBars+barWidth];
+	
+	//add y axis label
+	push();
+	fill(255);
+	textAlign(RIGHT);
+	text(max(vals),horizontalMargin-15,lineY[0]+5);
+	pop();
       
     for(j=0; j<numMarkets; j++){
-      var val = map(vals[j],0,max(vals),lineY[1],lineY[0])
-      noStroke();
-      overBar(i,j,rectX,lineY,val);
-      if(onBar) {
-        fill(255);
-        text(vals[j], rectX[0]+barWidth/2, val-5);
-      }
-      else{
-        fill(barColors[j]);
-      }
-        
+      var val = map(vals[j],0,max(vals),lineY[1],lineY[0]);
+	  var oppVal = map(oppVals[j],0,max(vals),lineY[1],lineY[0]);
+	  //var netVal = map(networkVals[j],0,max(vals),lineY[1],lineY[0]);
+
+	  //draw rectangle
+	  fill(barColors[j]);
+	  noStroke();
+	  push();
+	  if ((mouseX > rectX[0]) && (mouseX < rectX[1]) && (mouseY > val) && (mouseY < lineY[1])){
+		  noStroke();
+		  fill(255);
+		  textAlign(CENTER);
+		  textStyle(NORMAL);
+		  text(vals[j],rectX[0]+barWidth/2,val-12);
+		  strokeWeight(4);
+		  stroke(255);
+		  fill(barColors[j])
+	  }
       rect(rectX[0],val,rectX[1]-rectX[0],lineY[1]-1-val)
-      
+	  pop();
+	  
+	  //draw opportunity bars if it is filled
+      if (opportunityFilterBool == true){
+		  fill(rgbColors[j]);
+		  push();
+		  if ((mouseX > rectX[0]) && (mouseX < rectX[1]) && (mouseY > val) && (mouseY < lineY[1])){
+			  strokeWeight(4);
+		  	  stroke(255);
+			  textAlign(CENTER);
+		  	  textStyle(NORMAL);
+		  	  text(oppVals[j],rectX[0]+barWidth/2,oppVal-12);
+		  }
+		  rect(rectX[0],oppVal,rectX[1]-rectX[0],lineY[1]-1-oppVal);
+		  pop();
+	  }
+//	  if (onNetworkBool == true){
+//		  fill(rgbColors[j]);
+//		  rect(rectX[0],netVal,rectX[1]-rectX[0],lineY[1]-1-netVal);
+//	  }
+		
+	  
       //update bar locations
       rectX[0] = rectX[1]+spaceBetweenBars;
       rectX[1] = rectX[1]+spaceBetweenBars+barWidth;
@@ -110,69 +192,121 @@ function draw() {
     //update line and bar locations
     lineY[0] = lineY[1]+spaceBetweenGraphs;
     lineY[1] = lineY[1]+spaceBetweenGraphs+graphHeight;
-    
-    //update the temp line positions for the ticks
-    tempLineY[0] = lineY[1]+spaceBetweenGraphs;
-    tempLineY[1] = lineY[1]+spaceBetweenGraphs+graphHeight;
     }
   }
 
-function overBar(i,j,rectX,lineY,val){
-    if((mouseX > rectX[0]) && (mouseX < rectX[1]) && (mouseY > val) && (mouseY < lineY[1])) {
-        onBar = true;
-        numOnGraph = i;
-        numOnBar = j;
-      }
-    else{
-        onBar = false;
-    }
-}
-
-function barTicks(graphHeight, tempLineY, lineY){
-    separate = graphHeight / 5;
-    currentY = tempLineY[1]
-    for(x=0; x<6; x++){
-        strokeWeight(1);
-        stroke(0);
-        line(horizontalMargin-5,currentY,horizontalMargin,currentY);
-        currentY = currentY - separate;
-    }
-}
-
 function filterAvg(){
-  
   noStroke();
   fill(255);
   push();
-  if ((mouseX > 840) && (mouseX < 860) && (mouseY > 250) && (mouseY < 270) && (mouseIsPressed)){
+  if ((mouseX > (widthScreen - horizontalMargin - (horizontalMargin/4))) && (mouseX < (widthScreen - horizontalMargin - (horizontalMargin/4) + 20)) && (mouseY > heightScreen/2 - 50) && (mouseY < heightScreen/2 - 30) && (mouseIsPressed)){
 	  fill(0);
 	  barColumns = ['averageProfit','averageBuildingCost','averageProximity'];
+//	  if (opportunityFilterBool == true){
+//		  oppColumns = [];
+//	  } else if (onNetworkBool == true){
+//		  networkColumns = [];
+//	  }
+	  graphTitle = 'AVERAGE VALUES';
   }
-  rect(840, 250, 20, 20);
+  rect(widthScreen - horizontalMargin - (horizontalMargin/4), heightScreen/2 - 50, 20, 20);
   pop();
-  text('Average', 870, 265);
+  textStyle(NORMAL);
+  textAlign(LEFT);
+  text('AVERAGE', widthScreen - horizontalMargin - (horizontalMargin/4) + 25, heightScreen/2-35);
 }
+
 function filterMedian(){
   noStroke();
   fill(255);
   push();
-  if ((mouseX > 840) && (mouseX < 860) && (mouseY > 300) && (mouseY < 320) && (mouseIsPressed)){
+  if ((mouseX > (widthScreen - horizontalMargin - (horizontalMargin/4))) && (mouseX < (widthScreen - horizontalMargin - (horizontalMargin/4) + 20)) && (mouseY > heightScreen/2) && (mouseY < heightScreen/2 + 20) && (mouseIsPressed)){
 	  fill(0);
 	  barColumns = ['medianProfit','medianBuildingCost','medianProximit'];
+//	  if (opportunityFilterBool == true){
+//		  oppColumns = [];
+//	  } else if (onNetworkBool == true){
+//		  networkColumns = [];
+//	  }
+	  graphTitle = 'MEDIAN VALUES';
   }
-  rect(840, 300, 20, 20);
+  rect(widthScreen - horizontalMargin - (horizontalMargin/4), heightScreen/2, 20, 20);
   pop();
-  text('Median', 870, 315);
+  textStyle(NORMAL);
+  textAlign(LEFT);
+  text('MEDIAN', widthScreen - horizontalMargin - (horizontalMargin/4) + 25, heightScreen/2+15);
 }
+
 function filterSum(){
   noStroke();
   fill(255);
   push();
-  if ((mouseX > 840) && (mouseX < 860) && (mouseY > 350) && (mouseY < 370) && (mouseIsPressed)){
+  if ((mouseX > widthScreen - horizontalMargin - (horizontalMargin/4)) && (mouseX < widthScreen - horizontalMargin - (horizontalMargin/4) + 20) && (mouseY > heightScreen/2+50) && (mouseY < heightScreen/2+70) && (mouseIsPressed)){
 	  fill(0);
 	  barColumns = ['sumProfit','sumBuildingCost','sumProximity'];
+//	  if (opportunityFilterBool == true){
+//		  oppColumns = [];
+//	  } else if (onNetworkBool == true){
+//		  networkColumns = [];
+//	  }
+	  graphTitle = 'TOTAL VALUES';
   }
-  rect(840, 350, 20, 20);
+  rect(widthScreen - horizontalMargin - (horizontalMargin/4), heightScreen/2+50, 20, 20);
   pop();
-  text('Sum', 870, 365);
+  textStyle(NORMAL);
+  textAlign(LEFT);
+  text('TOTAL', widthScreen - horizontalMargin - (horizontalMargin/4) + 25, heightScreen/2+65);
 }
+
+function filterOpportunity(){
+  noStroke();
+  fill(255);
+  push();
+  if ((mouseX > widthScreen - horizontalMargin - (horizontalMargin/4)) && (mouseX < widthScreen - horizontalMargin - (horizontalMargin/4) + 20) && (mouseY > heightScreen/4) && (mouseY < heightScreen/4+20) & (mouseIsPressed)){
+	  fill(0);
+	  }
+  rect(widthScreen - horizontalMargin - (horizontalMargin/4), heightScreen/4, 20, 20);
+  pop();
+  textStyle(NORMAL);
+  textAlign(LEFT);
+  text('OPPORTUNITY', widthScreen - horizontalMargin - (horizontalMargin/4) + 25, heightScreen/4+15);
+}
+
+function filterNetworkStatus(){
+  noStroke();
+  fill(255);
+  push();
+  if ((mouseX > widthScreen - horizontalMargin - (horizontalMargin/4)) && (mouseX < widthScreen - horizontalMargin - (horizontalMargin/4) + 20) && (mouseY > heightScreen/4-50) && (mouseY < heightScreen/4-30) && (mouseIsPressed)){
+	  fill(0);
+	  }
+  rect(widthScreen - horizontalMargin - (horizontalMargin/4), heightScreen/4-50, 20, 20);
+  pop();
+  textAlign(LEFT);
+  textStyle(NORMAL);
+  text('ON NETWORK', widthScreen - horizontalMargin - (horizontalMargin/4) + 25, heightScreen/4-35);
+}
+
+function mouseClicked(){
+	if ((mouseX > widthScreen - horizontalMargin - (horizontalMargin/4)) && (mouseX < widthScreen - horizontalMargin - (horizontalMargin/4) + 20) && (mouseY > heightScreen/4) && (mouseY < heightScreen/4+20)){
+		if (opportunityFilterBool == false){
+		  opportunityFilterBool = true;
+		}
+	  	 else{
+		  opportunityFilterBool = false;
+		 }
+	}
+	else if ((mouseX > widthScreen - horizontalMargin - (horizontalMargin/4)) && (mouseX < widthScreen - horizontalMargin - (horizontalMargin/4) + 20) && (mouseY > heightScreen/4-50) && (mouseY < heightScreen/4-30)){
+		if (onNetworkBool == false){
+			onNetworkBool = true;
+		}
+		 else{
+		  onNetworkBool = false;
+		}
+	}
+}
+
+function mapPrevious(i,j,lineY){
+	prevVals = data.getColumn(barColumns[i]);
+	prevVal = map(prevVals[j],0,max(preVal),lineY[1],lineY[0]);	
+}
+
