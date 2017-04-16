@@ -33,7 +33,7 @@ var onNetworkBool = false;
 
 var onBar = false;
 var prevVals;
-var preVal;
+var prevVal;
 
 function preload() {
   data = loadTable(fileName, "csv", "header");
@@ -135,7 +135,6 @@ function draw() {
     var vals = data.getColumn(barColumns[i]);
 	//var oppVals = data.getColumn(oppColumns[i]);
 	var networkVals = onNetData.getColumn(networkColumns[i]);
-	console.log(networkVals)
     
 	var rectX = [horizontalMargin+spaceBetweenBars,
                  horizontalMargin+spaceBetweenBars+barWidth];
@@ -170,6 +169,11 @@ function draw() {
 		  textAlign(LEFT);
 		  textStyle(NORMAL);
 		  text(vals[j],mouseX+20,mouseY+25);
+		  if (i==1){
+		  	mapPrevious(i-1,j,lineY,rectX);}
+		  else if (i==0){
+			mapAfter(i+1,j,lineY,rectX);
+		  }
 		  
 	  }
       //rect(rectX[0],val,rectX[1]-rectX[0],lineY[1]-1-val);
@@ -209,7 +213,7 @@ function draw() {
 			  textAlign(LEFT);
 		  	  textStyle(NORMAL);
 		  	  text(vals[j]+ ', ' +networkVals[j],mouseX+20,mouseY+25);
-			  //mapPrevious(i,j,lineY);
+			  mapPrevious(i-1,j,lineY,rectX);
 			  
 		  }
 		  //rect(rectX[0],netVal,rectX[1]-rectX[0],lineY[1]-1-netVal);
@@ -326,10 +330,21 @@ function mouseClicked(){
 	}
 }
 
-function mapPrevious(i,j,lineY){
+function mapPrevious(i,j,lineY,rectX){
 	prevVals = data.getColumn(barColumns[i]);
-	prevVal = map(prevVals[j],0,max(preVal),lineY[1],lineY[0]);
-	rect(rectX[0],preVal,rectX[1]-rectX[0],lineY[1]-1-preVal);
-	console.log(preVal);
+	prevVal = map(prevVals[j],0,max(prevVals),lineY[1],lineY[0]);
+	strokeWeight(4);
+	stroke(255);
+	fill(barColors[j]);
+	rect(rectX[0],prevVal-spaceBetweenGraphs-graphHeight,rectX[1]-rectX[0],lineY[1]-1-prevVal);
+}
+
+function mapAfter(i,j,lineY,rectX){
+	prevVals = data.getColumn(barColumns[i]);
+	prevVal = map(prevVals[j],0,max(prevVals),lineY[1],lineY[0]);
+	strokeWeight(4);
+	stroke(255);
+	fill(barColors[j]);
+	rect(rectX[0],prevVal+spaceBetweenGraphs+graphHeight,rectX[1]-rectX[0],lineY[1]-1-prevVal);
 }
 
