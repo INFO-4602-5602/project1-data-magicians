@@ -1,7 +1,9 @@
 import csv, sys, re, math
 import statistics as stats
-
+import collections as collect
 #Market,averageProfit,medianProfit,sumProfit,averageBuildingCost,medianBuildingCost,sumBuildingCost,averageProximity,medianProximit,sumProximity
+
+numMarket = 3
 
 denProfit, atlProfit, dalProfit = [], [], []
 
@@ -31,6 +33,8 @@ cpq rows
 CPQ ID, Account ID, CreatedDate, ProductGroup, X36 MRC List, X36 NRR List, X36 NPV List, Building ID, Market, Street Addr, City, State, Postal Code
 
 '''
+
+print("processing data, please wait...")
 
 with open('ZayoHackathonData_CPQs.csv', newline='') as csvfile:
     reader = csv.reader(csvfile, delimiter=',')
@@ -62,33 +66,66 @@ denBldgCost, atlBldgCost, dalBldgCost = [], [], []
 
 denProx, atlProx, dalProx = [], [], []
 
+denBuildType, atlBuildType, dalBuildType = {}, {}, {}
+
+numRow = 0
+
+numDen, numDal, numAtl = 0, 0, 0
+
+
+
 with open('ZayoHackathonData_Buildings.csv', newline='') as csvfile:
     reader = csv.reader(csvfile, delimiter=',')
 
     for row in reader:
+        numRow += 1
+
         if (row[1] == "Denver"):
+            numDen +=1
             if (numCheck(row[12])):
                 denBldgCost.append(toFloat(row[12]))
             if (numCheck(row[11])):
                 denProx.append(toFloat(row[11]))
 
+            #top five
+            if (row[10] in denBuildType):
+                denBuildType[row[10]] += 1
+            else:
+                denBuildType[row[10]] = 1
+
+
         elif (row[1] == "Dallas"):
+            numDal +=1
             if (numCheck(row[12])):
                 dalBldgCost.append(toFloat(row[12]))
             if (numCheck(row[11])):
                 dalProx.append(toFloat(row[11]))
 
+            #top five
+            if (row[10] in dalBuildType):
+                dalBuildType[row[10]] += 1
+            else:
+                dalBuildType[row[10]] = 1
+
         elif (row[1] == "Atlanta"):
+            numAtl +=1
             if (numCheck(row[12])):
                 atlBldgCost.append(toFloat(row[12]))
             if (numCheck(row[11])):
                 atlProx.append(toFloat(row[11]))
 
+            #top five
+            if (row[10] in atlBuildType):
+                atlBuildType[row[10]] += 1
+            else:
+                atlBuildType[row[10]] = 1
 
 
 
+#print(denBuildType)
 
-#DATA PREP
+
+#OVERVIEW DATA PREP
 '''
 outData rows
 
@@ -97,7 +134,7 @@ Market,averageProfit,medianProfit,sumProfit,averageBuildingCost,medianBuildingCo
 
 '''
 
-columnLabels = ['Market', 'averageProfit', 'medianProfit', 'sumProfit', 'averageBuildingCost', 'medianBuildingCost', 'sumBuildingCost', 'averageProximity', 'medianProximit', 'sumProximity']
+overViewLabels = ['Market', 'averageProfit', 'medianProfit', 'sumProfit', 'averageBuildingCost', 'medianBuildingCost', 'sumBuildingCost', 'averageProximity', 'medianProximit', 'sumProximity']
 
 #currently hardcoded to the markets, so right now this code doesn't extend to n markets--not ideal but will revisit when we are more on our feet
 
@@ -110,7 +147,7 @@ Atlanta = ['Atlanta', stats.mean(atlProfit), stats.median(atlProfit), sum(atlPro
 
 outData = [Denver, Dallas, Atlanta]
 
-print(outData)
+#print(outData)
 
 for i in range(0, len(outData)):
     for j in range(0, len(outData[i])):
@@ -118,7 +155,38 @@ for i in range(0, len(outData)):
             outData[i][j] = round(outData[i][j])
 
 
-print(outData)
+#print(outData)
+
+
+#TOP FIVE DATA PREP
+
+print("den top five")
+denTopFive = collect.Counter(denBuildType)
+
+for i in range (0, 5):
+    print(denTopFive.most_common()[i])
+
+print("dal top five")
+dalTopFive = collect.Counter(dalBuildType)
+
+for i in range (0, 5):
+    print(dalTopFive.most_common()[i])
+
+print("atl top five")
+atlTopFive = collect.Counter(atlBuildType)
+
+for i in range (0, 5):
+    print(atlTopFive.most_common()[i])
+
+
+'''
+Market,topBuildType,total, percentOf
+0      1            2
+'''
+
+topFiveLabel = ['Market', 'topBuildType', 'total', 'percentOf']
+
+
 
 
 
@@ -128,7 +196,18 @@ print(outData)
 with open('overviewData.csv', 'w') as out:
     writer = csv.writer(out)
 
-    writer.writerow(columnLabels)
+    writer.writerow(overViewLabels)
+
+    for row in outData:
+        writer.writerow(row)
+
+out.close()
+
+
+with open('topFiveBuildType.csv', 'w') as out:
+    writer = csv.writer(out)
+
+    writer.writerow(topFiveLabel)
 
     for row in outData:
         writer.writerow(row)
