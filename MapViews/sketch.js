@@ -24,9 +24,9 @@ var clatNames = [clat_De,clat_At,clat_Da];
 var zoomNames = [zoom_De,zoom_At,zoom_Da];
 
 // variables for data
-var atlantaFile = 'AtlantaData.csv';
-var denverFile = 'DenverData.csv';
-var dallasFile = 'DallasData.csv';
+var atlantaFile = 'atlantaMin.csv';
+var denverFile = 'denverMin.csv';
+var dallasFile = 'dallasMin.csv';
 var denver;
 var atlanta;
 var dallas;
@@ -41,9 +41,9 @@ var oppClosed;
 var statusData;
 var markets = ['Denver','Atlanta','Dallas'];
 var market = 0;
-var maxCost = 10000;
-var originalMaxProfit = 10000;
-var maxProfit = 10000;
+var maxCost = 1000000;
+var originalMaxProfit = 1000000;
+var maxProfit = 1000000;
 var originalMinProfit = 0;
 var minProfit = 0;
 var maxProximity;
@@ -76,7 +76,7 @@ var yOffset = 0;
 var onDot = false;
 var onDoti = [];
 var onMapj;
-var checkBox = [false,false,false,false,false];
+var checkBox = [true,false,false,false,false];
 var clickedBox = false;
 var isOverBox = false;
 var boxi = [false,false,false,false,false];
@@ -86,6 +86,8 @@ var sliderWidth = 30;
 var sliderHeight = 10;
 var isOverSlider = false;
 var onSlideri;
+var overView = false;
+var mapView = true;
 
 function preload() {
   denver = loadTable(denverFile, "csv", "header");
@@ -143,6 +145,23 @@ function setup() {
 }
 
 function draw() {
+  
+  if(overView){
+    background(75);
+    if((mouseX>width/2-50) && (mouseX<width/2+50) && (mouseY>height/2-20) && (mouseY<height/2+20)){
+      fill(255,0,255);
+      if(mouseIsPressed){
+        overView = false;
+        mapView = true;
+      }
+      else{
+        fill(200);
+      }
+    }
+    text('Bar Charts',width/2,height/2);
+  }
+  
+  if(mapView){
   // draw background rectangles
   background(125);
   noStroke();
@@ -150,6 +169,20 @@ function draw() {
   rect(0,0,width-detailSpace,height);
   fill(75);
   rect(0,0,overviewSpace,height);
+  
+  // draw back arrow
+  noStroke();
+  if((mouseX>overviewSpace-15) && (mouseX<overviewSpace) && (mouseY>35) && (mouseY<55)){
+    fill(200);
+    if(mouseIsPressed){
+      overView = true;
+      mapView = false;
+    }
+  }
+  else{
+    fill(100);
+  }
+  triangle(overviewSpace,30,overviewSpace,60,overviewSpace-20,45);
   
   // draw picture
   if(markets[market] === 'Denver'){
@@ -248,22 +281,46 @@ function draw() {
       strokeWeight(2);
       fill(0,100);
       if(mouseIsPressed){
-        if(checkBox[i]){
+        if(checkBox[i] && (i>1)){
           checkBox[i] = false;
         }
-        else {
+        else if(!checkBox[i] && (i>1)){
           checkBox[i] = true;
+        }
+        else if(!checkBox[i] && (i<=1)){
+          if(i===0){
+            checkBox[0] = true;
+            checkBox[1] = false;
+          }
+          else if(i===1){
+            checkBox[1] = true;
+            checkBox[0] = false;
+          }
         }
       }
     }
     else{
       boxi[i] = false;
       strokeWeight(1);
-      noFill();
+      if(checkBox[0] && i===0){
+        fill(0,255,255,100);
+      }
+      else if(checkBox[1] && i===1){
+        fill(255,0,255,100);
+      }
+      else {
+        noFill();
+      }
     }
 
     rect(boxesX,boxesYs[i],boxSize,boxSize);
-    if(checkBox[i]){
+    if(checkBox[i] && i>1){
+      if(i===2){
+        stroke(255,255,0);
+      }
+      if(i===3){
+        stroke(252, 118, 35)
+      }
       line(boxesX,boxesYs[i],boxesX+boxSize,boxesYs[i]+boxSize);
       line(boxesX+boxSize,boxesYs[i],boxesX,boxesYs[i]+boxSize);
     }
@@ -280,7 +337,7 @@ function draw() {
   //imageMode(CENTER);
   //image(mapimg_De,mapCenterX,mapCenterY,mapSize,mapSize);
   // for(j=0; j<2; j++){
-  //   mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom,mapLocs[j],j)
+  mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom)
   // }
   
   fill(200);
@@ -289,18 +346,24 @@ function draw() {
   textStyle(NORMAL);
   text(markName[market],overviewSpace+horizontalSpace+mapSize,verticalSpace/2);
 
+  if(checkBox[4]){
+    textAlign(CENTER,CENTER);
+    textSize(20);
+    text('Pie Charts!',width-detailSpace/2,100);
+  }
+
   counter += 1;
+  }
 }
 
 
-function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom,mapLoc,j){
-  if(onMapj === j){
-    onDoti = [];
-  }
+function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom){
+  // if(onMapj === j){
+  onDoti = [];
+  // }
 
   push();
   translate(mapCenterX,mapCenterY);
-
   // center for lat and long - for Denver
   var cx = mercX(clon, zoom);
   var cy = mercY(clat, zoom);
@@ -309,14 +372,12 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom,mapLoc,j){
   var row;
   for(i=0; i<marketData[market].getRowCount(); i++){
     row = marketData[market].getRow(i);
-    var isActive = row.get('Status');
-    var isOppClosed = row.get('IsClosed');
-    if((isActive != 'Active') && (isOppClosed != false)){
       // convert long,lat to x,y
-      var lat = row.get('Latitude');
-      var lon = row.get('Longitude');
+      var lat = row.get('Lat');
+      var lon = row.get('Long');
       var y = mercY(lat, zoom) - cy;
       var x = mercX(lon, zoom) - cx;
+
       if ((mouseX-mapCenterX <= x+2) && (mouseX-mapCenterX >= x-2) &&
          (mouseY-mapCenterY <= y+2) && (mouseY-mapCenterY >= y-2)){
         strokeWeight(2);
@@ -324,7 +385,6 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom,mapLoc,j){
         radius = 20;
         onDot = true;
         onDoti.push(i);
-        onMapj = j;
       }
       else if (onDot && (onDoti.indexOf(i)>=0)) {
         strokeWeight(2);
@@ -335,31 +395,39 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom,mapLoc,j){
         noStroke();
         radius = 2;
       }
-      if((x>-mapSize/2) && (x<mapSize/2) && (y>-mapSize/2) && (y<mapSize/2)){
-        var pointcolor;
-        var onoffNet = row.get('On Zayo Network Status (Buildings)')
-        if(onoffNet === 'On Zayo Network'){
-          strokeWeight(1);
-          stroke(255,255,0);
-        }
-        else {
-          noStroke();
+      if((x>-mapSize/2) && (x<mapSize/2) && (y>-mapSize/2) && 
+         (y<mapSize/2)){
+        
+        if(checkBox[2]) {
+          var onoffNet = row.get('NetStatus')
+          if(onoffNet === 'On Zayo Network'){
+            strokeWeight(1);
+            stroke(255,255,0);
+          }
         }
         
-        // var profit = row.get('X36 NPV List');
-        // if((mapLoc === 'Left') && (profit != null)){
-        //   var val = int(map(profit,0,maxProfit,0,255));
-        //   fill(255,val,255);
-        //   ellipse(x, y, radius);
-        // }
+        if(checkBox[3]) {
+          var onoffNet = row.get('isClosed')
+          if(onoffNet){
+            strokeWeight(1);
+            stroke(252, 118, 35);
+          }
+        }
+        
+        if(checkBox[1]){
+          var profit = row.get('ProfitNPV');
+          var val = int(map(profit,0,maxProfit,0,255));
+          fill(255,val,255);
+          ellipse(x, y, radius);
+        }
       
-        if(mapLoc === 'Right'){
-          var cost = row.get('Estimated Build Cost');
+        if(checkBox[0]){
+          var cost = row.get('BuildCost');
           val = int(map(cost,0,maxCost,0,255));
           fill(val,255,255);
           ellipse(x, y, radius);
         }
-      }
+      // }
     }
   }
   pop();
@@ -476,7 +544,6 @@ function mouseDragged() {
   
   if(sliderLocked){
     if(onSlideri === 0){
-      console.log('got here');
       var checkProfit = map(mouseY,sliderYs[0],sliderYs[1],maxProfit,minProfit);
       if((checkProfit>minProfit) && (checkProfit<=originalMaxProfit)) {
         maxProfit = int(checkProfit);
