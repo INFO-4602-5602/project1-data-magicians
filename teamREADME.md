@@ -1,15 +1,16 @@
-#Team: Data Mag1icians
-##Team Roles:
+<h1>Team: Data Magicians</h1>
 
-**Lila:** Front-end/visualizations, map view with P5<
+<h2>Team Roles:</h2>
+
+<h4>**Lila:** Front-end/visualizations, map view with P5
 **Adam:** Back-end/data processing, scripting with Python
 **Matilda:** Front-end/visualizations, barchart with P5
 **Danny:** Front-end/visualizations, piechart with P5
-**Ben:** Back-end/data processing, data merging/statistics with Tableau/Excel/R 
+**Ben:** Back-end/data processing, data merging/statistics with Tableau/Excel/R </h4>
 
 
 
-How to Run:
+<h2>**How to Run:**</h2>
 Open the index.html file in a web browser. If using Chrome, you’ll have to use a local host like XAMP. Otherwise, it should be able to open in Firefox fine. 
 
 
