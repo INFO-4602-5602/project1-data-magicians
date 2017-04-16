@@ -12,8 +12,8 @@ var clon_Da = -96.7970;
 var clat_Da = 32.7767;
 var clon;
 var clat;
-var ww = 256*5/4;
-var hh = 256*5/4;
+var ww = 256*7/4;
+var hh = 256*7/4;
 var zoom_De = 8.0;//8.5;
 var zoom_At = 7.5;
 var zoom_Da = 7.0;
@@ -41,16 +41,17 @@ var oppClosed;
 var statusData;
 var markets = ['Denver','Atlanta','Dallas'];
 var market = 0;
-var maxCost = 1000000;
-var maxProfit = 1000000;
+var maxCost = 10000;
+var originalMaxProfit = 10000;
+var maxProfit = 10000;
+var originalMinProfit = 0;
+var minProfit = 0;
 var maxProximity;
 var nonCustomers = [];
-//var nonCustomers = new p5.Table([]);
-//var mark;
 
 // variables for maps & spacing
-var mapSize = 256*5/4;
-var mapImageSize = mapSize/2;
+var mapSize = 256*7/4;
+var mapImageSize = mapSize/2.5;
 var verticalSpaceBetweenMaps;
 var horizontalSpaceBetweenMaps;
 var overviewSpace = 200;
@@ -58,8 +59,8 @@ var detailSpace = 200;
 var mapLocs = ['Left', 'Right'];
 var mapCenterXs;
 var mapCenterYs;
-var mapLabels = ['PROFIT','COST'];
-var markName = ['DENVER','ATLANTA','DALLAS'];
+var mapLabel = 'PROFIT';//,'COST'];
+var markName = ['D E N V E R','A T L A N T A','D A L L A S'];
 var originalEdgeLat = [];
 var originalEdgeLon = [];
 var smallMapLeftX;
@@ -75,10 +76,16 @@ var yOffset = 0;
 var onDot = false;
 var onDoti = [];
 var onMapj;
-var checkBox = [false,false,false];
+var checkBox = [false,false,false,false,false];
 var clickedBox = false;
 var isOverBox = false;
-var boxi = [false,false,false];
+var boxi = [false,false,false,false,false];
+var sliderX;
+var sliderYs;
+var sliderWidth = 30;
+var sliderHeight = 10;
+var isOverSlider = false;
+var onSlideri;
 
 function preload() {
   denver = loadTable(denverFile, "csv", "header");
@@ -109,35 +116,35 @@ function setup() {
   background(125);
   
   // set spacing
-  verticalSpaceBetweenMaps = ((height-mapSize)*3/5);
-  horizontalSpaceBetweenMaps = (width-overviewSpace-detailSpace-mapSize*2)/3;
-  mapCenterXs = [overviewSpace+horizontalSpaceBetweenMaps+mapSize/2,
-                   overviewSpace+horizontalSpaceBetweenMaps*2+mapSize*3/2];
-  mapCenterYs = [verticalSpaceBetweenMaps+mapSize/2,
-                   verticalSpaceBetweenMaps+mapSize/2];
-  mapTextXs = [overviewSpace+horizontalSpaceBetweenMaps/2,
-               overviewSpace+horizontalSpaceBetweenMaps*3/2+mapSize];
-  mapTextYs = [verticalSpaceBetweenMaps+mapSize/2,
-               verticalSpaceBetweenMaps+mapSize/2];
+  verticalSpace = ((height-mapSize)*3/5);
+  horizontalSpace = (width-overviewSpace-detailSpace-mapSize)*3/4;
+  mapCenterX = overviewSpace+horizontalSpace+mapSize/2;
+  mapCenterY = verticalSpace+mapSize/2;
+  mapTextX = overviewSpace+horizontalSpace+mapSize;
+  mapTextY = verticalSpace-verticalSpace/6;
+  sliderX = overviewSpace+horizontalSpace+mapSize+(width-overviewSpace-detailSpace-horizontalSpace-mapSize)/3;
+  sliderYs = [verticalSpace+mapSize/6, verticalSpace+mapSize-mapSize/6];
+  sliderLineYs = [verticalSpace+mapSize/6, verticalSpace+mapSize-mapSize/6];
   
   // small map coords           
-  smallMapLeftX = width-detailSpace-mapSize/2-horizontalSpaceBetweenMaps;
-  smallMapRightX = width-detailSpace-mapSize/2-horizontalSpaceBetweenMaps+mapSize/2; 
-  smallMapTopY = (verticalSpaceBetweenMaps-mapSize/2)/2;
-  smallMapBottomY = (verticalSpaceBetweenMaps-mapSize/2)/2+mapSize/2;
+  smallMapLeftX = overviewSpace+(horizontalSpace-mapImageSize)/2;
+  smallMapRightX = overviewSpace+(horizontalSpace-mapImageSize)/2+mapImageSize; 
+  smallMapTopY = verticalSpace+mapSize-mapImageSize;
+  smallMapBottomY = verticalSpace+mapSize;
                
   // get min/max lat/long for each market
   for(i=0; i<3; i++) {
     var centerX = mercX(clonNames[i], zoomNames[i]);
     var centerY = mercY(clatNames[i], zoomNames[i]);
-    originalEdgeLat[i] = invMercY(-mapSize/2,zoomNames[i],centerY);
-    originalEdgeLon[i] = invMercX(-mapSize/2,zoomNames[i],centerX);
+    originalEdgeLat[i] = invMercY(-mapSize/2.5,zoomNames[i],centerY);
+    originalEdgeLon[i] = invMercX(-mapSize/2.5,zoomNames[i],centerX);
   }
 
 }
 
 function draw() {
   // draw background rectangles
+  background(125);
   noStroke();
   fill(100);
   rect(0,0,width-detailSpace,height);
@@ -147,7 +154,7 @@ function draw() {
   // draw picture
   if(markets[market] === 'Denver'){
     imageMode(CORNER);
-    image(mapimg_De,smallMapLeftX,smallMapTopY,mapSize/2,mapSize/2);
+    image(mapimg_De,smallMapLeftX,smallMapTopY,mapSize/2.5,mapSize/2.5);
     if(counter === 0){
       clon = clon_De;
       clat = clat_De;
@@ -157,7 +164,7 @@ function draw() {
   
   if(markets[market] === 'Atlanta'){
     imageMode(CORNER);
-    image(mapimg_At,smallMapLeftX,smallMapTopY,mapSize/2,mapSize/2);
+    image(mapimg_At,smallMapLeftX,smallMapTopY,mapSize/2.5,mapSize/2.5);
     if(counter === 0){
       clon = clon_At;
       clat = clat_At;
@@ -167,7 +174,7 @@ function draw() {
   
   if(markets[market] === 'Dallas'){
     imageMode(CORNER);
-    image(mapimg_Da,smallMapLeftX,smallMapTopY,mapSize/2,mapSize/2);
+    image(mapimg_Da,smallMapLeftX,smallMapTopY,mapSize/2.5,mapSize/2.5);
     if(counter === 0){
       clon = clon_Da;
       clat = clat_Da;
@@ -181,9 +188,9 @@ function draw() {
   noFill();
   var centerX = mercX(clon, zoom);
   var centerY = mercY(clat, zoom);
-  var topEdgeLat = invMercY(-mapSize/2,zoom,centerY);
-  var leftEdgeLon = invMercX(-mapSize/2,zoom,centerX);
-  var rightEdgeLon = invMercX(mapSize/2,zoom,centerX);
+  var topEdgeLat = invMercY(-mapSize/2.5,zoom,centerY);
+  var leftEdgeLon = invMercX(-mapSize/2.5,zoom,centerX);
+  var rightEdgeLon = invMercX(mapSize/2.5,zoom,centerX);
   var edgeLocY = map(topEdgeLat,originalEdgeLat[market],(clatNames[market]-originalEdgeLat[market])*2+originalEdgeLat[market],
                      smallMapTopY,smallMapBottomY);
   var leftEdgeLocX = map(leftEdgeLon,originalEdgeLon[market],(clonNames[market]-originalEdgeLon[market])*2+originalEdgeLon[market],
@@ -193,102 +200,94 @@ function draw() {
   var edgeLength = rightEdgeLocX - leftEdgeLocX;
   rect(leftEdgeLocX,edgeLocY,edgeLength,edgeLength);
   
-  // draw rectangles for edges of map boxes
+  // draw rectangles for edge of map
   strokeWeight(1);
   stroke(200);
-  noFill();
-  rect(overviewSpace+horizontalSpaceBetweenMaps,verticalSpaceBetweenMaps,
-       mapSize,mapSize);
-  rect(overviewSpace+horizontalSpaceBetweenMaps*2+mapSize,
-       verticalSpaceBetweenMaps,
+  fill(85);
+  rect(overviewSpace+horizontalSpace,verticalSpace,
        mapSize,mapSize);
   
   // draw slider bars
-  var sliderXs = [overviewSpace+horizontalSpaceBetweenMaps,
-                  overviewSpace+horizontalSpaceBetweenMaps+mapSize,
-                  overviewSpace+horizontalSpaceBetweenMaps*2+mapSize,
-                  overviewSpace+horizontalSpaceBetweenMaps*2+mapSize*2];
-  var sliderY = verticalSpaceBetweenMaps+horizontalSpaceBetweenMaps/2+mapSize;
-  var sliderWidth = 10;
-  var sliderHeight = 30;
-  line(sliderXs[0],sliderY,sliderXs[1],sliderY);
-  line(sliderXs[2],sliderY,sliderXs[3],sliderY);
+  line(sliderX,sliderLineYs[0],sliderX,sliderLineYs[1]);
+  fill(200);
+  for(i=0; i<2; i++){
+    if((mouseX>sliderX-sliderWidth/2) && (mouseX<sliderX+sliderWidth/2) && 
+       (mouseY>sliderYs[i]) && (mouseY<sliderYs[i]+sliderHeight)){
+      stroke(75);
+      isOverSlider = true;
+      onSlideri = i;
+    }
+    else{
+      noStroke();
+      isOverSlider = false;
+    }
+    rect(sliderX-sliderWidth/2,sliderYs[i],sliderWidth,sliderHeight);
+  }
   fill(200);
   noStroke();
-  rect(sliderXs[0],sliderY-horizontalSpaceBetweenMaps/4,sliderWidth,sliderHeight);
-  rect(sliderXs[1]-9,sliderY-horizontalSpaceBetweenMaps/4,sliderWidth,sliderHeight);
-  rect(sliderXs[2],sliderY-horizontalSpaceBetweenMaps/4,sliderWidth,sliderHeight);
-  rect(sliderXs[3]-9,sliderY-horizontalSpaceBetweenMaps/4,sliderWidth,sliderHeight);
-  fill(200);
-  noStroke();
-  textAlign(CENTER,TOP);
+  textAlign(LEFT,CENTER);
   textSize(12);
   textStyle(NORMAL);
-  text(0, sliderXs[0]+5,sliderY-horizontalSpaceBetweenMaps/4+35);
-  text(maxProfit, sliderXs[1]-9+5,sliderY-horizontalSpaceBetweenMaps/4+35);
-  text(0, sliderXs[2]+5,sliderY-horizontalSpaceBetweenMaps/4+35);
-  text(maxCost, sliderXs[3]-9+5,sliderY-horizontalSpaceBetweenMaps/4+35);
+  text(maxProfit, sliderX+20, sliderYs[0]+5);
+  text(minProfit, sliderX+20, sliderYs[1]+5);
        
   // boxes for filters on map
   var boxSize = 20;
-  var boxesXs = [overviewSpace+horizontalSpaceBetweenMaps,
-                 overviewSpace+horizontalSpaceBetweenMaps+250,
-                 overviewSpace+horizontalSpaceBetweenMaps+500];
-  var boxesY = verticalSpaceBetweenMaps+horizontalSpaceBetweenMaps*3/2+mapSize;
-  var checkBoxLabels = ['On Network','Open Opportunity','Details of Selected Group'];
-  for(i=0; i<boxesXs.length; i++){
+  var boxesX = overviewSpace+horizontalSpace*5/6-boxSize;
+  var boxesYs = [verticalSpace,
+                 (height-((height-verticalSpace-mapSize)+mapImageSize+verticalSpace))/5+verticalSpace,
+                 (height-((height-verticalSpace-mapSize)+mapImageSize+verticalSpace))*2/5+verticalSpace,
+                 (height-((height-verticalSpace-mapSize)+mapImageSize+verticalSpace))*3/5+verticalSpace,
+                 (height-((height-verticalSpace-mapSize)+mapImageSize+verticalSpace))*4/5+verticalSpace,];
+  var checkBoxLabels = ['PROFIT','COST','On Network','Open Opportunity','Details of Selection'];
+  for(i=0; i<boxesYs.length; i++){
     stroke(200);
-    isOverBox = mouseOverBox(boxesXs[i],boxesY,boxSize);
+    isOverBox = mouseOverBox(boxesX,boxesYs[i],boxSize);
     if(isOverBox){
       boxi[i] = true;
       strokeWeight(2);
       fill(0,100);
+      if(mouseIsPressed){
+        if(checkBox[i]){
+          checkBox[i] = false;
+        }
+        else {
+          checkBox[i] = true;
+        }
+      }
     }
     else{
+      boxi[i] = false;
       strokeWeight(1);
       noFill();
     }
-    console.log(isOverBox);
-    console.log(boxi[i]);
-    rect(boxesXs[i],boxesY,boxSize,boxSize);
+
+    rect(boxesX,boxesYs[i],boxSize,boxSize);
     if(checkBox[i]){
-      line(boxesXs[i],boxesY,boxesXs[i]+boxSize,boxesY+boxSize);
-      line(boxesXs[i]+boxSize,boxesY,boxesXs[i],boxesY+boxSize);
+      line(boxesX,boxesYs[i],boxesX+boxSize,boxesYs[i]+boxSize);
+      line(boxesX+boxSize,boxesYs[i],boxesX,boxesYs[i]+boxSize);
     }
     fill(200);
     noStroke();
     textStyle(NORMAL);
     textSize(16);
-    textAlign(LEFT,CENTER);
-    text(checkBoxLabels[i], boxesXs[i]+30, boxesY+boxSize/2);
+    textAlign(RIGHT,CENTER);
+    text(checkBoxLabels[i], boxesX-15, boxesYs[i]+boxSize/2);
   }
   
   //use web mercator equations
   isOverMap = mouseOverMap();
   //imageMode(CENTER);
-  //image(mapimg_De,mapCenterXs[1],mapCenterYs[1],mapSize,mapSize);
-  for(j=0; j<2; j++){
-    mapGraphs(mapCenterXs[j],mapCenterYs[j],clon,clat,zoom,mapLocs[j],j)
-  }
-  
-  // draw labels
-  for(i=0; i<2; i++){
-    push();
-    translate(mapTextXs[i],mapTextYs[i]);
-    fill(200);
-    rotate(-PI/2);
-    textAlign(CENTER,CENTER);
-    textSize(20);
-    textStyle(NORMAL);
-    text(mapLabels[i],0,0);
-    pop();
-  }
+  //image(mapimg_De,mapCenterX,mapCenterY,mapSize,mapSize);
+  // for(j=0; j<2; j++){
+  //   mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom,mapLocs[j],j)
+  // }
   
   fill(200);
-  textAlign(LEFT,CENTER);
+  textAlign(RIGHT,CENTER);
   textSize(60);
   textStyle(NORMAL);
-  text(markName[market],overviewSpace+horizontalSpaceBetweenMaps,verticalSpaceBetweenMaps/2);
+  text(markName[market],overviewSpace+horizontalSpace+mapSize,verticalSpace/2);
 
   counter += 1;
 }
@@ -347,12 +346,12 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom,mapLoc,j){
           noStroke();
         }
         
-        var profit = row.get('X36 NPV List');
-        if((mapLoc === 'Left') && (profit != null)){
-          var val = int(map(profit,0,maxProfit,0,255));
-          fill(255,val,255);
-          ellipse(x, y, radius);
-        }
+        // var profit = row.get('X36 NPV List');
+        // if((mapLoc === 'Left') && (profit != null)){
+        //   var val = int(map(profit,0,maxProfit,0,255));
+        //   fill(255,val,255);
+        //   ellipse(x, y, radius);
+        // }
       
         if(mapLoc === 'Right'){
           var cost = row.get('Estimated Build Cost');
@@ -400,7 +399,27 @@ function invMercY(y,zoom,cy) {
 function mouseWheel(event){
   if(isOverMap){
     var amount = map(event.delta,-5000,5000,-5,5);
-    if((zoom + amount) >= zoomNames[market]){
+    
+    // check if new lat and long edges are in range
+    var centerX = mercX(clon, zoom+amount);
+    var centerY = mercY(clat, zoom+amount);
+    var topEdgeLat = invMercY(-mapSize/2.5,zoom+amount,centerY);
+    var bottomEdgeLat = invMercY(mapSize/2.5,zoom+amount,centerY);
+    var leftEdgeLon = invMercX(-mapSize/2.5,zoom+amount,centerX);
+    var rightEdgeLon = invMercX(mapSize/2.5,zoom+amount,centerX);
+    
+    var topEdgeLocY = map(topEdgeLat,originalEdgeLat[market],(clatNames[market]-originalEdgeLat[market])*2+originalEdgeLat[market],
+                     smallMapTopY,smallMapBottomY);
+    var bottomEdgeLocY = map(bottomEdgeLat,originalEdgeLat[market],(clatNames[market]-originalEdgeLat[market])*2+originalEdgeLat[market],
+                     smallMapTopY,smallMapBottomY);
+    var leftEdgeLocX = map(leftEdgeLon,originalEdgeLon[market],(clonNames[market]-originalEdgeLon[market])*2+originalEdgeLon[market],
+                     smallMapLeftX,smallMapRightX);
+    var rightEdgeLocX = map(rightEdgeLon,originalEdgeLon[market],(clonNames[market]-originalEdgeLon[market])*2+originalEdgeLon[market],
+                     smallMapLeftX,smallMapRightX);
+    
+    if((leftEdgeLocX >= smallMapLeftX) && (rightEdgeLocX <= smallMapRightX) && 
+       (topEdgeLocY >= smallMapTopY) && (bottomEdgeLocY <= smallMapBottomY) && 
+       ((zoom+amount) >= zoomNames[market])){
       zoom += amount;
     }
   }
@@ -414,22 +433,16 @@ function mousePressed() {
   else{
     locked = false;
   }
+  
+  if(isOverSlider){
+    sliderLocked = true;
+  }
+  else{
+    sliderLocked = false;
+  }
+  
   xOffset = mouseX;
   yOffset = mouseY;
-  for(i=0;i<3;i++){
-    if(isOverBox && boxi[i]){
-    // clickedBox = true;
-      if(checkBox[i]){
-        checkBox[i] = false;
-      }
-      else{
-       checkBox[i] = true;
-      }
-    }
-  }
-  // else{
-    // clickedBox = false;
-  // }
 }
 
 function mouseDragged() {
@@ -440,10 +453,10 @@ function mouseDragged() {
     // check if new lat and long edges are in range
     var centerX = mercX(clon+amountX, zoom);
     var centerY = mercY(clat+amountY, zoom);
-    var topEdgeLat = invMercY(-mapSize/2,zoom,centerY);
-    var bottomEdgeLat = invMercY(mapSize/2,zoom,centerY);
-    var leftEdgeLon = invMercX(-mapSize/2,zoom,centerX);
-    var rightEdgeLon = invMercX(mapSize/2,zoom,centerX);
+    var topEdgeLat = invMercY(-mapSize/2.5,zoom,centerY);
+    var bottomEdgeLat = invMercY(mapSize/2.5,zoom,centerY);
+    var leftEdgeLon = invMercX(-mapSize/2.5,zoom,centerX);
+    var rightEdgeLon = invMercX(mapSize/2.5,zoom,centerX);
     
     var topEdgeLocY = map(topEdgeLat,originalEdgeLat[market],(clatNames[market]-originalEdgeLat[market])*2+originalEdgeLat[market],
                      smallMapTopY,smallMapBottomY);
@@ -460,6 +473,25 @@ function mouseDragged() {
       clon += amountX;
     }
   }
+  
+  if(sliderLocked){
+    if(onSlideri === 0){
+      console.log('got here');
+      var checkProfit = map(mouseY,sliderYs[0],sliderYs[1],maxProfit,minProfit);
+      if((checkProfit>minProfit) && (checkProfit<=originalMaxProfit)) {
+        maxProfit = int(checkProfit);
+        sliderYs[0] = mouseY;
+      }
+    }
+    else if(onSlideri === 1){
+      checkProfit = map(mouseY,sliderYs[0],sliderYs[1],maxProfit,minProfit);
+      if((checkProfit<maxProfit) && (checkProfit>=originalMinProfit)) {
+        minProfit = int(checkProfit);
+        sliderYs[1] = mouseY;
+      }
+    }
+  }
+  
 }
 
 function mouseReleased() {
@@ -467,14 +499,10 @@ function mouseReleased() {
 }
 
 function mouseOverMap() {
-  if(((mouseX>overviewSpace+horizontalSpaceBetweenMaps) && 
-     (mouseX<overviewSpace+horizontalSpaceBetweenMaps+mapSize) &&
-     (mouseY>verticalSpaceBetweenMaps) && 
-     (mouseY<verticalSpaceBetweenMaps+mapSize)) || 
-     ((mouseX>overviewSpace+horizontalSpaceBetweenMaps*2+mapSize) && 
-     (mouseX<overviewSpace+horizontalSpaceBetweenMaps*2+mapSize*2) &&
-     (mouseY>verticalSpaceBetweenMaps) && 
-     (mouseY<verticalSpaceBetweenMaps+mapSize))) { 
+  if(((mouseX>overviewSpace+horizontalSpace) && 
+     (mouseX<overviewSpace+horizontalSpace+mapSize) &&
+     (mouseY>verticalSpace) && 
+     (mouseY<verticalSpace+mapSize))) { 
      return true;
      }
   else
