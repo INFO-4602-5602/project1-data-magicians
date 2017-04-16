@@ -1,4 +1,4 @@
-<h1>Team: Data Mag1>icians </h
+<h1>Team: Data Mag1>icians </h1>
 <h2>Team Roles:</h2>
 
 <h4>**Lila:** Front-end/visualizations, map view with P5</h4>
