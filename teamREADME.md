@@ -10,7 +10,7 @@
 
 
 
-<h2>**How to Run:**</h2>
+<h2>How to Run:</h2>
 Open the index.html file in a web browser. If using Chrome, you’ll have to use a local host like XAMP. Otherwise, it should be able to open in Firefox fine. 
 
 
