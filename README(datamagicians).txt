@@ -1,10 +1,11 @@
-Team Roles:
+<h1>Team: Data Mag1>icians </h
+<h2>Team Roles:</h2>
 
-Lila: Front-end/visualizations, map view with P5
-Adam: Back-end/data processing, scripting with Python
-Matilda: Front-end/visualizations, barchart with P5
-Danny: Front-end/visualizations, piechart with P5
-Ben: Back-end/data processing, data merging/statistics with Tableau/Excel/R 
+<h4>**Lila:** Front-end/visualizations, map view with P5</h4>
+**Adam:** Back-end/data processing, scripting with Python
+**Matilda:** Front-end/visualizations, barchart with P5
+**Danny:** Front-end/visualizations, piechart with P5
+**Ben:** Back-end/data processing, data merging/statistics with Tableau/Excel/R 
 
 
 
