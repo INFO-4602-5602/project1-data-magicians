@@ -1,5 +1,6 @@
 
-var fileName = "text.csv";
+var fileName = "overviewData.csv";
+var onNetFile = "onNetData.csv";
 var data;
 
 var numGraphs = 2;
@@ -18,15 +19,17 @@ var yAxisLabel;
 var graphHeight;
 var graphWidth;
 
-var barColumns = ['medianProfit','medianBuildingCost','medianProximit'];
+var barColumns = ['costMedian', 'NPVmedian'];
+var networkColumns = ['costMedian', 'NPVmedian'];
+
 var barColors = ['#ff00ff','#99ff33','#00ccff'];
 var rgbColors = [[255, 179, 255],[218, 255, 179],[179, 240, 255]];
-var graphTitle = "MEDIAN VALUES";
-var oppColumns = ['medianOppProf','medianOppCost','medianOppProx'];
-var opportunityFilterBool = false;
-var networkColumns = ['medianNetworkProf', 'medianNetworkCost'];
-var onNetworkBool = false;
 
+var graphTitle = "MEDIAN VALUES";
+//var oppColumns = ['medianOppProf','medianOppCost','medianOppProx'];
+//var opportunityFilterBool = false;
+
+var onNetworkBool = false;
 
 var onBar = false;
 var prevVals;
@@ -34,6 +37,7 @@ var preVal;
 
 function preload() {
   data = loadTable(fileName, "csv", "header");
+  onNetData = loadTable(onNetFile, "csv", "header");
 }
 
 function setup() {
@@ -46,7 +50,6 @@ function setup() {
   yAxisLabel = horizontalMargin/4
   spaceBetweenGraphs = (height-2*height/6)/5;
   graphHeight = (height/3);
-  console.log(graphHeight);
   graphWidth = width-2*width/6;
   spaceBetweenBars = graphWidth/20;
   barWidth = (graphWidth-spaceBetweenBars*4)/3;
@@ -71,7 +74,7 @@ function draw() {
   filterAvg();
   filterMedian();
   filterSum();
-  filterOpportunity();
+  //filterOpportunity();
   filterNetworkStatus();
     
   for(i=0; i<numGraphs; i++){
@@ -130,9 +133,11 @@ function draw() {
     //draw bars and implement interaction
 
     var vals = data.getColumn(barColumns[i]);
-	var oppVals = data.getColumn(oppColumns[i]);
-	//var networkVals = data.getColumn(networkColumns[i]);
-    var rectX = [horizontalMargin+spaceBetweenBars,
+	//var oppVals = data.getColumn(oppColumns[i]);
+	var networkVals = onNetData.getColumn(networkColumns[i]);
+	console.log(networkVals)
+    
+	var rectX = [horizontalMargin+spaceBetweenBars,
                  horizontalMargin+spaceBetweenBars+barWidth];
 	
 	//add y axis label
@@ -144,44 +149,72 @@ function draw() {
       
     for(j=0; j<numMarkets; j++){
       var val = map(vals[j],0,max(vals),lineY[1],lineY[0]);
-	  var oppVal = map(oppVals[j],0,max(vals),lineY[1],lineY[0]);
-	  //var netVal = map(networkVals[j],0,max(vals),lineY[1],lineY[0]);
+	  //var oppVal = map(oppVals[j],0,max(vals),lineY[1],lineY[0]);
+	  var netVal = map(networkVals[j],0,max(vals),lineY[1],lineY[0]);
 
 	  //draw rectangle
 	  fill(barColors[j]);
 	  noStroke();
+	  rect(rectX[0],val,rectX[1]-rectX[0],lineY[1]-1-val);
 	  push();
 	  if ((mouseX > rectX[0]) && (mouseX < rectX[1]) && (mouseY > val) && (mouseY < lineY[1])){
-		  noStroke();
-		  fill(255);
-		  textAlign(CENTER);
-		  textStyle(NORMAL);
-		  text(vals[j],rectX[0]+barWidth/2,val-12);
 		  strokeWeight(4);
 		  stroke(255);
-		  fill(barColors[j])
+		  fill(barColors[j]);
+		  rect(rectX[0],val,rectX[1]-rectX[0],lineY[1]-1-val);
+		  noStroke();
+		  fill(255);
+	  	  rect(mouseX+10, mouseY+10, vals[j].length*12, 20);
+		  textSize(13);
+		  fill(100);
+		  textAlign(LEFT);
+		  textStyle(NORMAL);
+		  text(vals[j],mouseX+20,mouseY+25);
+		  
 	  }
-      rect(rectX[0],val,rectX[1]-rectX[0],lineY[1]-1-val)
+      //rect(rectX[0],val,rectX[1]-rectX[0],lineY[1]-1-val);
 	  pop();
 	  
-	  //draw opportunity bars if it is filled
-      if (opportunityFilterBool == true){
+//	  draw opportunity bars if it is filled
+//      if (opportunityFilterBool == true){
+//		  fill(rgbColors[j]);
+//		  push();
+//		  if ((mouseX > rectX[0]) && (mouseX < rectX[1]) && (mouseY > val) && (mouseY < lineY[1])){
+//			  strokeWeight(4);
+//		  	  stroke(255);
+//			  textAlign(CENTER);
+//		  	  textStyle(NORMAL);
+//		  	  text(oppVals[j],rectX[0]+barWidth/2,oppVal-12);
+//			  mapPrevious(i,j,lineY);
+//		  }
+//		  rect(rectX[0],oppVal,rectX[1]-rectX[0],lineY[1]-1-oppVal);
+//		  pop();
+//	  }
+//		
+	  if (onNetworkBool == true){
 		  fill(rgbColors[j]);
+		  noStroke();
+		  rect(rectX[0],netVal,rectX[1]-rectX[0],lineY[1]-1-netVal);
 		  push();
 		  if ((mouseX > rectX[0]) && (mouseX < rectX[1]) && (mouseY > val) && (mouseY < lineY[1])){
 			  strokeWeight(4);
 		  	  stroke(255);
-			  textAlign(CENTER);
+			  fill(rgbColors[j]);
+			  rect(rectX[0],netVal,rectX[1]-rectX[0],lineY[1]-1-netVal);
+			  noStroke();
+			  fill(255);
+			  rect(mouseX+10, mouseY+10, (vals[j].length+networkVals[j].length)*10, 20);
+			  textSize(13);
+			  fill(100);
+			  textAlign(LEFT);
 		  	  textStyle(NORMAL);
-		  	  text(oppVals[j],rectX[0]+barWidth/2,oppVal-12);
+		  	  text(vals[j]+ ', ' +networkVals[j],mouseX+20,mouseY+25);
+			  //mapPrevious(i,j,lineY);
+			  
 		  }
-		  rect(rectX[0],oppVal,rectX[1]-rectX[0],lineY[1]-1-oppVal);
+		  //rect(rectX[0],netVal,rectX[1]-rectX[0],lineY[1]-1-netVal);
 		  pop();
 	  }
-//	  if (onNetworkBool == true){
-//		  fill(rgbColors[j]);
-//		  rect(rectX[0],netVal,rectX[1]-rectX[0],lineY[1]-1-netVal);
-//	  }
 		
 	  
       //update bar locations
@@ -201,12 +234,8 @@ function filterAvg(){
   push();
   if ((mouseX > (widthScreen - horizontalMargin - (horizontalMargin/4))) && (mouseX < (widthScreen - horizontalMargin - (horizontalMargin/4) + 20)) && (mouseY > heightScreen/2 - 50) && (mouseY < heightScreen/2 - 30) && (mouseIsPressed)){
 	  fill(0);
-	  barColumns = ['averageProfit','averageBuildingCost','averageProximity'];
-//	  if (opportunityFilterBool == true){
-//		  oppColumns = [];
-//	  } else if (onNetworkBool == true){
-//		  networkColumns = [];
-//	  }
+	  barColumns = ['costMean', 'NPVmean'];
+	  networkColumns = ['costMean', 'NPVmean'];
 	  graphTitle = 'AVERAGE VALUES';
   }
   rect(widthScreen - horizontalMargin - (horizontalMargin/4), heightScreen/2 - 50, 20, 20);
@@ -222,12 +251,8 @@ function filterMedian(){
   push();
   if ((mouseX > (widthScreen - horizontalMargin - (horizontalMargin/4))) && (mouseX < (widthScreen - horizontalMargin - (horizontalMargin/4) + 20)) && (mouseY > heightScreen/2) && (mouseY < heightScreen/2 + 20) && (mouseIsPressed)){
 	  fill(0);
-	  barColumns = ['medianProfit','medianBuildingCost','medianProximit'];
-//	  if (opportunityFilterBool == true){
-//		  oppColumns = [];
-//	  } else if (onNetworkBool == true){
-//		  networkColumns = [];
-//	  }
+	  barColumns = ['costMedian', 'NPVmedian'];
+	  networkColumns = ['costMedian', 'NPVmedian'];
 	  graphTitle = 'MEDIAN VALUES';
   }
   rect(widthScreen - horizontalMargin - (horizontalMargin/4), heightScreen/2, 20, 20);
@@ -243,12 +268,8 @@ function filterSum(){
   push();
   if ((mouseX > widthScreen - horizontalMargin - (horizontalMargin/4)) && (mouseX < widthScreen - horizontalMargin - (horizontalMargin/4) + 20) && (mouseY > heightScreen/2+50) && (mouseY < heightScreen/2+70) && (mouseIsPressed)){
 	  fill(0);
-	  barColumns = ['sumProfit','sumBuildingCost','sumProximity'];
-//	  if (opportunityFilterBool == true){
-//		  oppColumns = [];
-//	  } else if (onNetworkBool == true){
-//		  networkColumns = [];
-//	  }
+	  barColumns = ['costSum', 'NPVSum'];
+	  networkColumns = ['costSum', 'NPVSum'];
 	  graphTitle = 'TOTAL VALUES';
   }
   rect(widthScreen - horizontalMargin - (horizontalMargin/4), heightScreen/2+50, 20, 20);
@@ -267,8 +288,8 @@ function filterOpportunity(){
 	  }
   rect(widthScreen - horizontalMargin - (horizontalMargin/4), heightScreen/4, 20, 20);
   pop();
-  textStyle(NORMAL);
   textAlign(LEFT);
+  textStyle(NORMAL);
   text('OPPORTUNITY', widthScreen - horizontalMargin - (horizontalMargin/4) + 25, heightScreen/4+15);
 }
 
@@ -307,6 +328,8 @@ function mouseClicked(){
 
 function mapPrevious(i,j,lineY){
 	prevVals = data.getColumn(barColumns[i]);
-	prevVal = map(prevVals[j],0,max(preVal),lineY[1],lineY[0]);	
+	prevVal = map(prevVals[j],0,max(preVal),lineY[1],lineY[0]);
+	rect(rectX[0],preVal,rectX[1]-rectX[0],lineY[1]-1-preVal);
+	console.log(preVal);
 }
 
