@@ -414,12 +414,12 @@ function draw() {
     fill(200);
     text('TOP 5',width-detailSpace/2,verticalDetailSpace/3);
     
-    if(box4Counter === counter){
-      var pieDataOut = getPieData(pieDictBuildType);
-      pieSectionLabels[2] = pieDataOut[0];
-      pieDecimalData[2] = pieDataOut[1];
-      console.log(pieDictBuildType);
-    }
+    // if(box4Counter === counter){
+    //   var pieDataOut = getPieData(pieDictBuildType);
+    //   pieSectionLabels[2] = pieDataOut[0];
+    //   pieDecimalData[2] = pieDataOut[1];
+    //   console.log(pieDictBuildType);
+    // }
     
     var data;
     var total;
