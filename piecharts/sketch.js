@@ -68,26 +68,29 @@ function setup()
 
 }
 
-
+//change hard coded arrays so that pie charts show (building type, product group, industry)
 
 function draw() {
 background(100);
-fill(256);
-text("DENVER", 820, 20);
-text("ATLANTA", 820, 220);
-text("DALLAS", 820, 420);
+strokeWeight(2);
+noFill();
+stroke(255);
+textSize(14);
+text("Building Type", 803, 18);
+text("Product Group", 800, 218);
+text("Industry", 820, 418);
 
 console.log(mouseAngle);
 
   for(var i=0,dx=0,dy=0;i<piedata.length;i++,dx=0,dy=0) {
     fill(piecolor[i%6]);
     if(mouseAngle >= piedata[i][0] && mouseAngle < piedata[i][1] && mouseX>775 && mouseX<925 && mouseY > 30 && mouseY < 180) {
-      fill(255);
+      stroke(255);
       dx = Math.cos((piedata[i][0] + piedata[i][1])/2) * 10;
       dy = Math.sin((piedata[i][0] + piedata[i][1])/2) * 10;
-      text(data[i],20,20);
-      text(data[i],20,40);
-    }
+      text((dataA[i]*100 + "%"),935,50);
+      //text(data[i],20,40);
+}
     arc(850 + dx, 105 + dy, 150, 150, piedata[i][0], piedata[i][1], PIE);
   }
 
@@ -97,8 +100,8 @@ console.log(mouseAngle);
       fill(255);
       dx = Math.cos((piedata1[i][0] + piedata1[i][1])/2) * 10;
       dy = Math.sin((piedata1[i][0] + piedata1[i][1])/2) * 10;
-      text(data1[i],20,20);
-      text(data1[i],20,40);
+      text((dataB[i]*100 + "%"),935,260);
+      //text(data1[i],20,40);
     }
     arc(850 + dx, 305 + dy, 150, 150, piedata1[i][0], piedata1[i][1], PIE);
   }
@@ -109,7 +112,7 @@ console.log(mouseAngle);
       fill(255);
       dx = Math.cos((piedata2[i][0] + piedata2[i][1])/2) * 10;
       dy = Math.sin((piedata2[i][0] + piedata2[i][1])/2) * 10;
-      text(data2[i],20,20);
+      text((dataC[i]*100 + "%"),935,445);
       text(data2[i],20,40);
     }
     arc(850 + dx, 505 + dy, 150, 150, piedata2[i][0], piedata2[i][1], PIE);
