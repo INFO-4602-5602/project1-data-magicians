@@ -19,13 +19,13 @@ Open the index.html file in a web browser. If using Chrome, you’ll have to use
 
 We built three different visualizations that are interlinked and interactive. These include a barchart, a map view, and a piechart. 
 
-<h4>Barchart</h4>
+<h3>Barchart</h3>
 The barchart window contains statistics about building costs and net present value (NPV) for each market. You can filter by total(sum), median, or average. In addition, you can filter by locations that are already on network, or ones that are opportunities. Filter by clicking the relevant boxes. 
 
-<h4>Map View</h4>
+<h3>Map View</h3>
 The map view window also contains information about building costs and NPV. You can select between viewing profits or costs, and then filter by ‘on network’ or ‘open opportunity’. Each point on the map represents a building, and hovering over gives more information about the buildings location. You can zoom in to narrow the scope of the map, and can pan by holding your cursor on a point and dragging. Clicking ‘details of selection’ generates a series of pie charts that gives statistics about industry type, product group, and building type under the currently selected view. 
 
-<h4>Piechart</h4>
+<h3>Piechart</h3>
 The piechart window gives descriptive information about the building types, product groups, and industries present in the current map view. This is expressed as a percent of the total sum of each respective category. Hovering over a pie slice will cause it to separate, and becoming highlighted. A popup will appear that contains the percentage and categorical information of the slice. 
 
 
