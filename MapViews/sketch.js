@@ -14,9 +14,9 @@ var clon;
 var clat;
 var ww = 256*7/4;
 var hh = 256*7/4;
-var zoom_De = 8.0;//8.5;
-var zoom_At = 7.5;
-var zoom_Da = 7.0;
+var zoom_De = 8.5;//8.5;
+var zoom_At = 8.2;
+var zoom_Da = 7.8;
 var zoom;
 var access = 'pk.eyJ1IjoibGlmaSIsImEiOiJjajFjeTE1b3kwMGQyMnFwbWp6NW40NTUxIn0.BYl1Zq_s7wKPFdNBu0WpYg';
 var clonNames = [clon_De,clon_At,clon_Da];
@@ -40,12 +40,15 @@ var proximity;
 var oppClosed;
 var statusData;
 var markets = ['Denver','Atlanta','Dallas'];
-var market = 0;
-var maxCost = 1000000;
-var originalMaxProfit = 1000000;
-var maxProfit = 1000000;
+var market;
+var originalMaxProfit = 500000;
+var maxProfit = 500000;
 var originalMinProfit = 0;
 var minProfit = 0;
+var originalMaxCost = 600000;
+var maxCost = 600000;
+var originalMinCost = 0;
+var minCost = 0;
 var maxProximity;
 var nonCustomers = [];
 
@@ -56,10 +59,8 @@ var verticalSpaceBetweenMaps;
 var horizontalSpaceBetweenMaps;
 var overviewSpace = 200;
 var detailSpace = 200;
-var mapLocs = ['Left', 'Right'];
 var mapCenterXs;
 var mapCenterYs;
-var mapLabel = 'PROFIT';//,'COST'];
 var markName = ['D E N V E R','A T L A N T A','D A L L A S'];
 var originalEdgeLat = [];
 var originalEdgeLon = [];
@@ -67,6 +68,7 @@ var smallMapLeftX;
 var smallMapRightX; 
 var smallMapTopY;
 var smallMapBottomY;
+var fontRegular;
 
 // variables for interaction
 var isOverMap = false;
@@ -82,12 +84,16 @@ var isOverBox = false;
 var boxi = [false,false,false,false,false];
 var sliderX;
 var sliderYs;
+var originalSliderYs;
 var sliderWidth = 30;
 var sliderHeight = 10;
 var isOverSlider = false;
 var onSlideri;
-var overView = false;
-var mapView = true;
+var overView = true;
+var mapView = false;
+
+// variables for pie charts
+var pieRowIndicies = [];
 
 function preload() {
   denver = loadTable(denverFile, "csv", "header");
@@ -110,6 +116,8 @@ function preload() {
     clon_Da + ',' + clat_Da + ',' + zoom_Da + '/' +
     ww + 'x' + hh +
     '?access_token=' + access);
+  
+  fontRegular = textFont("Georgia");
 
 }
 
@@ -126,6 +134,7 @@ function setup() {
   mapTextY = verticalSpace-verticalSpace/6;
   sliderX = overviewSpace+horizontalSpace+mapSize+(width-overviewSpace-detailSpace-horizontalSpace-mapSize)/3;
   sliderYs = [verticalSpace+mapSize/6, verticalSpace+mapSize-mapSize/6];
+  originalSliderYs = [verticalSpace+mapSize/6, verticalSpace+mapSize-mapSize/6];
   sliderLineYs = [verticalSpace+mapSize/6, verticalSpace+mapSize-mapSize/6];
   
   // small map coords           
@@ -157,7 +166,10 @@ function draw() {
       else{
         fill(200);
       }
+      market = 0;
     }
+    textAlign(CENTER,CENTER);
+    textSize(40);
     text('Bar Charts',width/2,height/2);
   }
   
@@ -243,16 +255,15 @@ function draw() {
   // draw slider bars
   line(sliderX,sliderLineYs[0],sliderX,sliderLineYs[1]);
   fill(200);
+  isOverSlider = mouseOverASlider();
   for(i=0; i<2; i++){
     if((mouseX>sliderX-sliderWidth/2) && (mouseX<sliderX+sliderWidth/2) && 
        (mouseY>sliderYs[i]) && (mouseY<sliderYs[i]+sliderHeight)){
       stroke(75);
-      isOverSlider = true;
       onSlideri = i;
     }
-    else{
+    else {
       noStroke();
-      isOverSlider = false;
     }
     rect(sliderX-sliderWidth/2,sliderYs[i],sliderWidth,sliderHeight);
   }
@@ -261,8 +272,16 @@ function draw() {
   textAlign(LEFT,CENTER);
   textSize(12);
   textStyle(NORMAL);
-  text(maxProfit, sliderX+20, sliderYs[0]+5);
-  text(minProfit, sliderX+20, sliderYs[1]+5);
+  if(checkBox[0]){
+    var showTextMin = minProfit;
+    var showTextMax = maxProfit;
+  }
+  else if(checkBox[1]){
+    var showTextMin = minCost;
+    var showTextMax = maxCost;
+  }
+  text(showTextMax, sliderX+20, sliderYs[0]+5);
+  text(showTextMin, sliderX+20, sliderYs[1]+5);
        
   // boxes for filters on map
   var boxSize = 20;
@@ -332,13 +351,9 @@ function draw() {
     text(checkBoxLabels[i], boxesX-15, boxesYs[i]+boxSize/2);
   }
   
-  //use web mercator equations
+  //use web mercator equations to plot points on map
   isOverMap = mouseOverMap();
-  //imageMode(CENTER);
-  //image(mapimg_De,mapCenterX,mapCenterY,mapSize,mapSize);
-  // for(j=0; j<2; j++){
   mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom)
-  // }
   
   fill(200);
   textAlign(RIGHT,CENTER);
@@ -358,9 +373,7 @@ function draw() {
 
 
 function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom){
-  // if(onMapj === j){
   onDoti = [];
-  // }
 
   push();
   translate(mapCenterX,mapCenterY);
@@ -370,6 +383,7 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom){
 
   var radius;
   var row;
+  pieRowIndicies = [];
   for(i=0; i<marketData[market].getRowCount(); i++){
     row = marketData[market].getRow(i);
       // convert long,lat to x,y
@@ -390,10 +404,10 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom){
         strokeWeight(2);
         stroke(255);
         radius = 20;
-     }
+      }
       else {
         noStroke();
-        radius = 2;
+        radius = 5;
       }
       if((x>-mapSize/2) && (x<mapSize/2) && (y>-mapSize/2) && 
          (y<mapSize/2)){
@@ -414,22 +428,62 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom){
           }
         }
         
-        if(checkBox[1]){
+        if(checkBox[0]){
           var profit = row.get('ProfitNPV');
-          var val = int(map(profit,0,maxProfit,0,255));
-          fill(255,val,255);
-          ellipse(x, y, radius);
+          profit = profit.replace(",","");
+          profit = int(profit);
+          if((profit>=minProfit) && (profit<=maxProfit)){
+            var val = int(map(profit,0,originalMaxProfit,0,255));
+            fill(val,255,255,150);
+            ellipse(x, y, radius);
+            // append(pieRowIndicies,i);
+          }
         }
       
-        if(checkBox[0]){
+        if(checkBox[1]){
           var cost = row.get('BuildCost');
-          val = int(map(cost,0,maxCost,0,255));
-          fill(val,255,255);
-          ellipse(x, y, radius);
+          cost = cost.replace(",","");
+          cost = int(cost);
+          if((cost>=minCost) && (cost<=maxCost)){
+            val = int(map(cost,0,originalMaxCost,0,255));
+            fill(255,val,255,150);
+            ellipse(x, y, radius);
+            // append(pieRowIndicies,i);
+          }
         }
-      // }
     }
+    
+    if ((mouseX-mapCenterX <= x+2) && (mouseX-mapCenterX >= x-2) &&
+         (mouseY-mapCenterY <= y+2) && (mouseY-mapCenterY >= y-2)){
+        if(onDoti.length===1){
+          var address = row.get('StreetAddress');
+          var partsAddress = address.split(" ");
+          var line1Length = partsAddress.length-3;
+          var addressLine1 = "";
+          var addressLine2 = "";
+          for(k=0;k<line1Length;k++){
+            addressLine1 += partsAddress[k]+" ";
+          }
+          for(k=0;k<3;k++){
+            if(k===2){
+              addressLine2 += partsAddress[k+line1Length];
+            }
+            else {
+              addressLine2 += partsAddress[k+line1Length]+", ";
+            }
+          }
+          fill(200);
+          noStroke();
+          rect(x+15,y-5,130,30);
+          textAlign(LEFT,TOP);
+          textSize(12);
+          fill(0);
+          text(addressLine1,x+15,y-5);
+          text(addressLine2,x+15,y-5+15);
+        }
+      }
   }
+  
   pop();
   return;
 }
@@ -544,16 +598,56 @@ function mouseDragged() {
   
   if(sliderLocked){
     if(onSlideri === 0){
-      var checkProfit = map(mouseY,sliderYs[0],sliderYs[1],maxProfit,minProfit);
-      if((checkProfit>minProfit) && (checkProfit<=originalMaxProfit)) {
+      var checkProfit = map(mouseY,originalSliderYs[0],originalSliderYs[1],
+                            originalMaxProfit,originalMinProfit);
+      var checkCost = map(mouseY,originalSliderYs[0],originalSliderYs[1],
+                           originalMaxCost,originalMinCost);
+      if(checkBox[0] && (checkProfit>minProfit) && (checkProfit<=originalMaxProfit)) {
         maxProfit = int(checkProfit);
         sliderYs[0] = mouseY;
+        maxCost = int(checkCost);
+      }
+      if(checkBox[1] && (checkCost>minCost) && (checkCost<=originalMaxCost)) {
+        maxProfit = int(checkProfit);
+        sliderYs[0] = mouseY;
+        maxCost = int(checkCost);
+      }
+      if(mouseY<originalSliderYs[0]){
+        maxProfit = originalMaxProfit;
+        maxCost = originalMaxCost;
       }
     }
     else if(onSlideri === 1){
-      checkProfit = map(mouseY,sliderYs[0],sliderYs[1],maxProfit,minProfit);
-      if((checkProfit<maxProfit) && (checkProfit>=originalMinProfit)) {
+      checkProfit = map(mouseY,originalSliderYs[0],originalSliderYs[1],
+                         originalMaxProfit,originalMinProfit);
+      checkCost = map(mouseY,originalSliderYs[0],originalSliderYs[1],
+                         originalMaxCost,originalMinCost);
+      if(checkBox[0] && (checkProfit<maxProfit) && (checkProfit>=originalMinProfit)) {
         minProfit = int(checkProfit);
+        sliderYs[1] = mouseY;
+        minCost = int(checkCost);
+      }
+      if(checkBox[1] && (checkCost<maxCost) && (checkCost>=originalMinCost)) {
+        minProfit = int(checkProfit);
+        sliderYs[1] = mouseY;
+        minCost = int(checkCost);
+      }
+      if(mouseY>originalSliderYs[1]){
+        minProfit = originalMinProfit;
+        minCost = originalMinCost;
+      }
+    }
+    else if(onSlideri === 0 && checkBox[1]){
+      var checkCost = map(mouseY,sliderYs[0],sliderYs[1],maxCost,minCost);
+      if((checkCost>minCost) && (checkCost<=originalMaxCost)) {
+        maxCost = int(checkCost);
+        sliderYs[0] = mouseY;
+      }
+    }
+    else if(onSlideri === 1 && checkBox[1]){
+      checkCost = map(mouseY,sliderYs[0],sliderYs[1],maxCost,minCost);
+      if((checkCost<maxCost) && (checkCost>=originalMinCost)) {
+        minCost = int(checkCost);
         sliderYs[1] = mouseY;
       }
     }
@@ -581,6 +675,18 @@ function mouseOverBox(boxX,boxY,boxSize) {
     return true;
   }
   else{
+    return false;
+  }
+}
+
+function mouseOverASlider() {
+  if(((mouseX>sliderX-sliderWidth/2) && (mouseX<sliderX+sliderWidth/2) && 
+       (mouseY>sliderYs[0]) && (mouseY<sliderYs[0]+sliderHeight)) || 
+       ((mouseX>sliderX-sliderWidth/2) && (mouseX<sliderX+sliderWidth/2) && 
+       (mouseY>sliderYs[1]) && (mouseY<sliderYs[1]+sliderHeight))){
+         return true;
+       }
+  else {
     return false;
   }
 }
