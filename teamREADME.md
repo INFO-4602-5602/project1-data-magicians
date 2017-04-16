@@ -2,11 +2,11 @@
 
 <h2>Team Roles:</h2>
 
-<h4>**Lila:** Front-end/visualizations, map view with P5
-**Adam:** Back-end/data processing, scripting with Python
-**Matilda:** Front-end/visualizations, barchart with P5
-**Danny:** Front-end/visualizations, piechart with P5
-**Ben:** Back-end/data processing, data merging/statistics with Tableau/Excel/R </h4>
+<h4>__Lila:__ Front-end/visualizations, map view with P5  \n
+Adam: Back-end/data processing, scripting with Python \n
+Matilda: Front-end/visualizations, barchart with P5
+Danny: Front-end/visualizations, piechart with P5
+Ben: Back-end/data processing, data merging/statistics with Tableau/Excel/R </h4>
 
 
 
