@@ -534,7 +534,6 @@ function draw() {
   strokeWeight(1);
   stroke(200);
   noFill();
-  console.log(clon);
   var centerX = mercX(clon, zoom);
   var centerY = mercY(clat, zoom);
   var topEdgeLat = invMercY(-mapSize/2.5,zoom,centerY);
