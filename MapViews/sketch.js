@@ -120,8 +120,8 @@ var overviewFile = "overviewData.csv";
 var onNetFile = "onNetData.csv";
 var numGraphs = 2;
 var numMarkets;
-var widthScreen = 1200;
-var heightScreen = 700;
+var widthScreen;
+var heightScreen;
 var verticalMargin;
 var horizontalMargin;
 var spaceBetweenGraphs;
@@ -212,16 +212,7 @@ function setup() {
                  verticalDetailSpace+spaceBetweenPieCenters*2+spaceBetweenPieCenters/3];
   pieCenterX = (width-detailSpace)+detailSpace/2+(detailSpace-pieDiameter)/4;
 
-  // values for bar chart locations
-  verticalMargin = height/12;
-  horizontalMargin = width/8;
-  yAxisLabel = horizontalMargin/4
-  spaceBetweenGraphs = (height-2*height/6)/5;
-  graphHeight = (height/3);
-  graphWidth = width-2*width/6;
-  spaceBetweenBars = graphWidth/20;
-  barWidth = (graphWidth-spaceBetweenBars*4)/3;
-  
+  // values for bar charts
   numMarkets = overviewData.getColumn('Market').length;
 
 }
@@ -229,6 +220,18 @@ function setup() {
 function draw() {
   
   if(overView){
+    // bar chart locs
+    widthScreen = 1200;
+    heightScreen = 700;
+    verticalMargin = height/12;
+    horizontalMargin = width/8;
+    yAxisLabel = horizontalMargin/4
+    spaceBetweenGraphs = (height-2*height/6)/5;
+    graphHeight = (height/3);
+    graphWidth = width-2*width/6;
+    spaceBetweenBars = graphWidth/20;
+    barWidth = (graphWidth-spaceBetweenBars*4)/3;
+    
     // draw graph title
     background(75);
     fill(200);
@@ -398,6 +401,90 @@ function draw() {
   fill(75);
   rect(0,0,overviewSpace,height);
   
+  // draw small graphs
+  // reset values based on new space
+  widthScreen = overviewSpace;
+  verticalMargin = height/12;
+  horizontalMargin = widthScreen/4;
+  yAxisLabel = horizontalMargin/2
+  spaceBetweenGraphs = (height-2*height/6)/5;
+  graphHeight = (height/3);
+  graphWidth = widthScreen-2*widthScreen/6;
+  spaceBetweenBars = graphWidth/20;
+  barWidth = (graphWidth-spaceBetweenBars*4)/3;
+  lineY = [verticalMargin+15,verticalMargin+graphHeight];
+
+  for(i=0; i<numGraphs; i++){
+    // initialize the bar titles
+    textSize(14);
+    noStroke();
+    fill(200);
+  
+    if (i==1){
+      textAlign(CENTER,CENTER);
+      textSize(9);
+      textStyle(NORMAL);
+      text('DENVER', horizontalMargin+spaceBetweenBars+barWidth/2, 
+           lineY[1] + 30);
+      text('ATLANTA', horizontalMargin+spaceBetweenBars+barWidth+spaceBetweenBars+barWidth/2, 
+           lineY[1] + 30);
+      text('DALLAS', horizontalMargin+spaceBetweenBars+barWidth+spaceBetweenBars+barWidth+spaceBetweenBars+barWidth/2, 
+           lineY[1] + 30);
+    }
+    
+    if (i==0){
+      push();
+      translate(yAxisLabel,heightScreen/4);
+      fill(200);
+      rotate(-PI/2);
+      textAlign(CENTER,CENTER);
+      textSize(14);
+      textStyle(NORMAL);
+      text('BUILDING COST',0,0);
+      pop();	
+    }
+    
+    else if (i==1){
+      push();
+      translate(yAxisLabel,heightScreen - (heightScreen/4)-20);
+      fill(200);
+      rotate(-PI/2);
+      textAlign(CENTER,CENTER);
+      textSize(14);
+      textStyle(NORMAL);
+      text('NET PRESENT VALUE',0,0);
+      pop();	
+    }
+        
+    //make lines for axes
+    strokeWeight(1);
+    stroke(200);
+    line(horizontalMargin,lineY[0],horizontalMargin,lineY[1]);
+    line(horizontalMargin,lineY[1],horizontalMargin+graphWidth,lineY[1]);
+    
+    //draw bars and implement interaction
+    var vals = overviewData.getColumn(barColumns[i]);
+    var rectX = [horizontalMargin+spaceBetweenBars,
+                 horizontalMargin+spaceBetweenBars+barWidth];
+      
+    for(j=0; j<numMarkets; j++){
+      var val = map(vals[j],0,max(vals),lineY[1],lineY[0]);
+  
+      //draw rectangle
+      fill(barColors[j]);
+      noStroke();
+      rect(rectX[0],val,rectX[1]-rectX[0],lineY[1]-1-val);
+    
+      //update bar locations
+      rectX[0] = rectX[1]+spaceBetweenBars;
+      rectX[1] = rectX[1]+spaceBetweenBars+barWidth;
+    }
+    
+    //update line and bar locations
+    lineY[0] = lineY[1]+spaceBetweenGraphs;
+    lineY[1] = lineY[1]+spaceBetweenGraphs+graphHeight;
+  }
+  
   // draw back arrow
   noStroke();
   if((mouseX>overviewSpace-15) && (mouseX<overviewSpace) && (mouseY>35) && (mouseY<55)){
@@ -508,7 +595,7 @@ function draw() {
                  (height-((height-verticalSpace-mapSize)+mapImageSize+verticalSpace))*2/5+verticalSpace,
                  (height-((height-verticalSpace-mapSize)+mapImageSize+verticalSpace))*3/5+verticalSpace-10,
                  (height-((height-verticalSpace-mapSize)+mapImageSize+verticalSpace))*4/5+verticalSpace];
-  var checkBoxLabels = ['PROFIT','COST','On Network','Open Opportunity','Details of Selection'];
+  var checkBoxLabels = ['NET PRESENT VALUE','BUILDING COST','On Network','Open Opportunity','Details of Selection'];
   for(i=0; i<boxesYs.length; i++){
     stroke(200);
     isOverBox = mouseOverBox(boxesX,boxesYs[i],boxSize);
@@ -580,7 +667,7 @@ function draw() {
     textSize(16);
     textAlign(RIGHT,CENTER);
     text(checkBoxLabels[i], boxesX-15, boxesYs[i]+boxSize/2);
-    text("or", boxesX-15, boxesYs[0]+(boxesYs[1]-boxesYs[0])*5/7);
+    //text("or", boxesX-15, boxesYs[0]+(boxesYs[1]-boxesYs[0])*5/7);
   }
   stroke(200);
   strokeWeight(1);
