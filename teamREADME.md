@@ -40,4 +40,4 @@ Finally, for the third visualization, we wanted to include other attributes we t
 <h2>Conclusion:</h2>
 Overall, our design process started out in the prototyping phase, and then went through iterative cycles of front and back end development. We helped each other through each stage, but all had our own focus as well. Keeping organized by using seperate task-oriented channels on #Slack helped our team to stay focused, help each other with our respective tasks, and also to stay up to date with progress updates as we individually worked on our own tasks. 
 
-
+![alt tag](http://imgur.com/a/HkqpQ)
