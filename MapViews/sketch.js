@@ -115,11 +115,45 @@ var pieLabels = ['Industry','Product Group','Building Type'];
 var pieCounter;
 var pieDictBuildType = {};
 
+// variables for bar charts
+var overviewFile = "overviewData.csv";
+var onNetFile = "onNetData.csv";
+var numGraphs = 2;
+var numMarkets;
+var widthScreen = 1200;
+var heightScreen = 700;
+var verticalMargin;
+var horizontalMargin;
+var spaceBetweenGraphs;
+var spaceBetweenBars;
+var barWidth;
+var yAxisLabel;
+var graphHeight;
+var graphWidth;
+var barColumns = ['costMedian', 'NPVmedian'];
+var networkColumns = ['costMedian', 'NPVmedian'];
+var barColors = ['#ff00ff','#99ff33','#00ccff'];
+var rgbColors = [[255, 179, 255],[218, 255, 179],[179, 240, 255]];
+var graphTitle = "MEDIAN VALUES";
+var onNetworkBool = false;
+var onBar = false;
+var prevVals;
+var prevVal;
+var onAvg = false;
+var avgClicked = true;
+var onMed = false;
+var medClicked = false;
+var onSum = false;
+var sumClicked = false;
+
 function preload() {
   denver = loadTable(denverFile, "csv", "header");
   atlanta = loadTable(atlantaFile, "csv", "header");
   dallas = loadTable(dallasFile, "csv", "header");
   marketData = [denver,atlanta,dallas];
+  
+  overviewData = loadTable(overviewFile, "csv", "header");
+  onNetData = loadTable(onNetFile, "csv", "header");
   
   // pull images from mapbox for each city (512 x 512px)
   mapimg_De = loadImage('https://api.mapbox.com/styles/v1/mapbox/dark-v9/static/' +
@@ -178,26 +212,181 @@ function setup() {
                  verticalDetailSpace+spaceBetweenPieCenters*2+spaceBetweenPieCenters/3];
   pieCenterX = (width-detailSpace)+detailSpace/2+(detailSpace-pieDiameter)/4;
 
+  // values for bar chart locations
+  verticalMargin = height/12;
+  horizontalMargin = width/8;
+  yAxisLabel = horizontalMargin/4
+  spaceBetweenGraphs = (height-2*height/6)/5;
+  graphHeight = (height/3);
+  graphWidth = width-2*width/6;
+  spaceBetweenBars = graphWidth/20;
+  barWidth = (graphWidth-spaceBetweenBars*4)/3;
+  
+  numMarkets = overviewData.getColumn('Market').length;
+
 }
 
 function draw() {
   
   if(overView){
+    // draw graph title
     background(75);
-    if((mouseX>width/2-50) && (mouseX<width/2+50) && (mouseY>height/2-20) && (mouseY<height/2+20)){
-      fill(255,0,255);
-      if(mouseIsPressed){
-        overView = false;
-        mapView = true;
+    fill(200);
+    textSize(35);
+    textAlign(CENTER);
+    textStyle(NORMAL);
+    text(graphTitle, widthScreen/2.2, heightScreen - (heightScreen/1.07));
+  	
+    var lineY = [verticalMargin+15,verticalMargin+graphHeight]; 
+  
+    //intialize filter boxes
+    filterAvg();
+    filterMedian();
+    filterSum();
+    
+    filterNetworkStatus();
+      
+    for(i=0; i<numGraphs; i++){
+      // initialize the bar titles
+      textSize(14);
+      noStroke();
+      fill(200);
+      
+  	  if (i==1){
+        textAlign(CENTER,CENTER);
+    	  textSize(22);
+    	  textStyle(NORMAL);
+        text('DENVER', horizontalMargin+spaceBetweenBars+barWidth/2, 
+             lineY[1] + 30);
+        text('ATLANTA', horizontalMargin+spaceBetweenBars+barWidth+spaceBetweenBars+barWidth/2, 
+             lineY[1] + 30);
+        text('DALLAS', horizontalMargin+spaceBetweenBars+barWidth+spaceBetweenBars+barWidth+spaceBetweenBars+barWidth/2, 
+             lineY[1] + 30);
+  	  }
+  	  
+      if (i==0){
+    		push();
+       	translate(yAxisLabel,heightScreen/4);
+       	fill(200);
+       	rotate(-PI/2);
+       	textAlign(CENTER,CENTER);
+       	textSize(22);
+       	textStyle(NORMAL);
+       	text('BUILDING COST',0,0);
+       	pop();	
       }
-      else{
-        fill(200);
+      
+      else if (i==1){
+  		  push();
+       	translate(yAxisLabel,heightScreen - (heightScreen/4)-20);
+       	fill(200);
+       	rotate(-PI/2);
+       	textAlign(CENTER,CENTER);
+       	textSize(22);
+       	textStyle(NORMAL);
+       	text('NET PRESENT VALUE',0,0);
+       	pop();	
       }
-      market = 0;
+  	      
+      //make lines for axes
+      strokeWeight(1);
+      stroke(200);
+      line(horizontalMargin,lineY[0],horizontalMargin,lineY[1]);
+      line(horizontalMargin,lineY[1],horizontalMargin+graphWidth,lineY[1]);
+      
+  	  //draw bars and implement interaction
+      var vals = overviewData.getColumn(barColumns[i]);
+  	  var networkVals = onNetData.getColumn(networkColumns[i]);
+      var rectX = [horizontalMargin+spaceBetweenBars,
+                   horizontalMargin+spaceBetweenBars+barWidth];
+                   
+    	//add graph ticks
+    	strokeWeight(1);
+    	stroke(200);
+    	line(horizontalMargin-5,lineY[1],horizontalMargin,lineY[1]);
+    	line(horizontalMargin-5,lineY[0],horizontalMargin,lineY[0]);
+    	noStroke();
+    	textStyle(NORMAL);
+    	textSize(16);
+    	textAlign(RIGHT,CENTER);
+      text('$0',horizontalMargin-15,lineY[1]);
+    	text("$"+nfc(max(vals)),horizontalMargin-15,lineY[0]+5);
+        
+      for(j=0; j<numMarkets; j++){
+        var val = map(vals[j],0,max(vals),lineY[1],lineY[0]);
+  	    var netVal = map(networkVals[j],0,max(vals),lineY[1],lineY[0]);
+  
+    	  //draw rectangle
+    	  fill(barColors[j]);
+    	  noStroke();
+    	  rect(rectX[0],val,rectX[1]-rectX[0],lineY[1]-1-val);
+    	  if ((mouseX > rectX[0]) && (mouseX < rectX[1]) && 
+    	      (mouseY > val) && (mouseY < lineY[1])) {
+    	    if(mouseIsPressed){
+    	      market = j;
+    	      mapView = true;
+    	      overView = false;
+    	      counter=-1;
+    	    }
+    		  strokeWeight(4);
+    		  stroke(230);
+    		  fill(barColors[j]);
+    		  rect(rectX[0],val,rectX[1]-rectX[0],lineY[1]-1-val);
+    		  noStroke();
+    		  fill(200);
+  	  	  rect(mouseX+10, mouseY+10, vals[j].length*12, 20);
+    		  textSize(13);
+    		  fill(50);
+    		  textAlign(LEFT);
+    		  textStyle(NORMAL);
+    		  text(vals[j],mouseX+20,mouseY+25);
+    		  if (i==1){
+    		  	mapPrevious(i-1,j,lineY,rectX);}
+    		  else if (i==0){
+    			mapAfter(i+1,j,lineY,rectX);
+  		    }
+  	    }
+
+  	  if (onNetworkBool == true){
+  		  fill(rgbColors[j]);
+  		  noStroke();
+  		  rect(rectX[0],netVal,rectX[1]-rectX[0],lineY[1]-1-netVal);
+  		  // push();
+  		  if ((mouseX > rectX[0]) && (mouseX < rectX[1]) && 
+  		      (mouseY > val) && (mouseY < lineY[1])){
+  		    if(mouseIsPressed){
+    	      market = j;
+    	      mapView = true;
+    	      overView = false;
+    	      counter=-1;
+    	    }
+  			  strokeWeight(4);
+  		  	stroke(255);
+  			  fill(rgbColors[j]);
+  			  rect(rectX[0],netVal,rectX[1]-rectX[0],lineY[1]-1-netVal);
+  			  noStroke();
+  			  fill(255);
+  			  rect(mouseX+10, mouseY+10, (vals[j].length+networkVals[j].length)*10, 20);
+  			  textSize(13);
+  			  fill(100);
+  			  textAlign(LEFT);
+  		  	textStyle(NORMAL);
+  		  	text(vals[j]+ ', ' +networkVals[j],mouseX+20,mouseY+25);
+  			  mapPrevious(i-1,j,lineY,rectX);
+  		  }
+  		  //rect(rectX[0],netVal,rectX[1]-rectX[0],lineY[1]-1-netVal);
+  		  // pop();
+  	  }
+  		
+        //update bar locations
+        rectX[0] = rectX[1]+spaceBetweenBars;
+        rectX[1] = rectX[1]+spaceBetweenBars+barWidth;
+      }
+      
+      //update line and bar locations
+      lineY[0] = lineY[1]+spaceBetweenGraphs;
+      lineY[1] = lineY[1]+spaceBetweenGraphs+graphHeight;
     }
-    textAlign(CENTER,CENTER);
-    textSize(40);
-    text('Bar Charts',width/2,height/2);
   }
   
   if(mapView){
@@ -258,6 +447,7 @@ function draw() {
   strokeWeight(1);
   stroke(200);
   noFill();
+  console.log(clon);
   var centerX = mercX(clon, zoom);
   var centerY = mercY(clat, zoom);
   var topEdgeLat = invMercY(-mapSize/2.5,zoom,centerY);
@@ -628,7 +818,7 @@ function invMercY(y,zoom,cy) {
 }
 
 function mouseWheel(event){
-  if(isOverMap){
+  if(isOverMap && mapView){
     var amount = map(event.delta,-5000,5000,-5,5);
     
     // check if new lat and long edges are in range
@@ -658,26 +848,28 @@ function mouseWheel(event){
 }
 
 function mousePressed() {
-  if(isOverMap){
-    locked = true;
+  if(mapView){
+    if(isOverMap){
+      locked = true;
+    }
+    else{
+      locked = false;
+    }
+    
+    if(isOverSlider){
+      sliderLocked = true;
+    }
+    else{
+      sliderLocked = false;
+    }
+    
+    xOffset = mouseX;
+    yOffset = mouseY;
   }
-  else{
-    locked = false;
-  }
-  
-  if(isOverSlider){
-    sliderLocked = true;
-  }
-  else{
-    sliderLocked = false;
-  }
-  
-  xOffset = mouseX;
-  yOffset = mouseY;
 }
 
 function mouseDragged() {
-  if(locked){
+  if(locked && mapView){
     var amountX = map(xOffset-mouseX,-100,100,-0.1,0.1);
     var amountY = map(yOffset-mouseY,100,-100,-0.1,0.1);
     
@@ -705,7 +897,7 @@ function mouseDragged() {
     }
   }
   
-  if(sliderLocked){
+  if(mapView && sliderLocked){
     if(onSlideri === 0){
       var checkProfit = map(mouseY,originalSliderYs[0],originalSliderYs[1],
                             originalMaxProfit,originalMinProfit);
@@ -767,11 +959,58 @@ function mouseReleased() {
   locked = false;
 }
 
+function mouseClicked(){
+	if (overView && (mouseX > widthScreen - horizontalMargin - (horizontalMargin/4)) && 
+	    (mouseX < widthScreen - horizontalMargin - (horizontalMargin/4) + 20) && 
+	    (mouseY > heightScreen/4) && (mouseY < heightScreen/4+20)){
+		if (opportunityFilterBool == false){
+		  opportunityFilterBool = true;
+		}
+	  	 else{
+		  opportunityFilterBool = false;
+		 }
+	}
+	else if (overView && (mouseX > widthScreen - horizontalMargin - (horizontalMargin/4)) && 
+	        (mouseX < widthScreen - horizontalMargin - (horizontalMargin/4) + 20) && 
+	        (mouseY > heightScreen/2+70+10) && (mouseY < heightScreen/2+70+10+20)){
+		if (onNetworkBool == false){
+			onNetworkBool = true;
+		}
+		 else{
+		  onNetworkBool = false;
+		}
+	}
+	
+	if (overView && onAvg){
+	  avgClicked = true;
+	  sumClicked = false;
+	  medClicked = false;
+	}
+	if (overView && onSum){
+	  sumClicked = true;
+	  avgClicked = false;
+	  medClicked = false;
+	}
+	if (overView && onMed){
+	  medClicked = true;
+	  avgClicked = false;
+	  sumClicked = false;
+	}
+// 	if (overView && onNetwork){
+// 	  if(onNetwork){
+// 	    onNetwork = false;
+// 	  }
+// 	  else {
+// 	    networkClicked = true;
+// 	  }
+// 	}
+}
+
 function mouseOverMap() {
-  if(((mouseX>overviewSpace+horizontalSpace) && 
+  if((mouseX>overviewSpace+horizontalSpace) && 
      (mouseX<overviewSpace+horizontalSpace+mapSize) &&
      (mouseY>verticalSpace) && 
-     (mouseY<verticalSpace+mapSize))) { 
+     (mouseY<verticalSpace+mapSize) && mapView) { 
      return true;
      }
   else
@@ -779,7 +1018,7 @@ function mouseOverMap() {
 }
 
 function mouseOverBox(boxX,boxY,boxSize) {
-  if((mouseX>boxX) && (mouseX<(boxX+boxSize)) && (mouseY>boxY) && (mouseY<(boxY+boxSize))){
+  if(mapView && (mouseX>boxX) && (mouseX<(boxX+boxSize)) && (mouseY>boxY) && (mouseY<(boxY+boxSize))){
     return true;
   }
   else{
@@ -788,7 +1027,7 @@ function mouseOverBox(boxX,boxY,boxSize) {
 }
 
 function mouseOverASlider() {
-  if(((mouseX>sliderX-sliderWidth/2) && (mouseX<sliderX+sliderWidth/2) && 
+  if(mapView && ((mouseX>sliderX-sliderWidth/2) && (mouseX<sliderX+sliderWidth/2) && 
        (mouseY>sliderYs[0]) && (mouseY<sliderYs[0]+sliderHeight)) || 
        ((mouseX>sliderX-sliderWidth/2) && (mouseX<sliderX+sliderWidth/2) && 
        (mouseY>sliderYs[1]) && (mouseY<sliderYs[1]+sliderHeight))){
@@ -870,4 +1109,151 @@ function getPieData(dict)
     }
     values[5] =(othersSum / sum) ;
     return [names, values]
+}
+
+function filterAvg(){
+  stroke(200);
+  strokeWeight(1);
+  noFill();
+  if ((mouseX > (widthScreen - horizontalMargin - (horizontalMargin/4))) && 
+      (mouseX < (widthScreen - horizontalMargin - (horizontalMargin/4) + 20)) && 
+      (mouseY > heightScreen/2-100) && (mouseY < heightScreen/2 -80)){
+    onAvg = true;
+	  if(mouseIsPressed){
+	    barColumns = ['costMean', 'NPVmean'];
+	    networkColumns = ['costMean', 'NPVmean'];
+	    graphTitle = 'AVERAGE VALUES';
+	  }
+	  fill(50);
+  }
+  else {
+    onAvg = false;
+  }
+  if(avgClicked){
+    fill(250);
+  }
+  triangle(widthScreen - horizontalMargin - (horizontalMargin/4)+20,heightScreen/2-100,
+           widthScreen - horizontalMargin - (horizontalMargin/4)+20,heightScreen/2-100+20,
+           widthScreen - horizontalMargin - (horizontalMargin/4),heightScreen/2-100+10);
+  noStroke();
+  fill(200);
+  textStyle(NORMAL);
+  textAlign(LEFT,CENTER);
+  textSize(16);
+  text('AVERAGE', widthScreen - horizontalMargin - (horizontalMargin/4)+30, heightScreen/2-100+10);
+}
+
+function filterMedian(){
+  stroke(200);
+  strokeWeight(1);
+  noFill();
+  if ((mouseX > (widthScreen - horizontalMargin - (horizontalMargin/4))) && 
+      (mouseX < (widthScreen - horizontalMargin - (horizontalMargin/4) + 20)) && 
+      (mouseY > heightScreen/2-50) && (mouseY < heightScreen/2-50 + 20)){
+    onMed = true;
+	  if(mouseIsPressed){
+	    barColumns = ['costMedian', 'NPVmedian'];
+	    networkColumns = ['costMedian', 'NPVmedian'];
+	    graphTitle = 'MEDIAN VALUES';
+	  }
+	  fill(50);
+  }
+  else{
+    onMed = false;
+  }
+  if(medClicked){
+    fill(250);
+  }
+  triangle(widthScreen - horizontalMargin - (horizontalMargin/4)+20,heightScreen/2-50,
+           widthScreen - horizontalMargin - (horizontalMargin/4)+20,heightScreen/2-50+20,
+           widthScreen - horizontalMargin - (horizontalMargin/4),heightScreen/2-50+10);
+  noStroke();
+  fill(200);
+  textStyle(NORMAL);
+  textAlign(LEFT,CENTER);
+  textSize(16);
+  text('MEDIAN', widthScreen - horizontalMargin - (horizontalMargin/4)+30, heightScreen/2-50+10);
+}
+
+function filterSum(){
+  stroke(200);
+  strokeWeight(1);
+  noFill();
+  if ((mouseX > widthScreen - horizontalMargin - (horizontalMargin/4)) && 
+      (mouseX < widthScreen - horizontalMargin - (horizontalMargin/4) + 20) && 
+      (mouseY > heightScreen/2-50+50) && (mouseY < heightScreen/2-50+70)){
+    onSum = true;
+	  if(mouseIsPressed){
+	    barColumns = ['costSum', 'NPVSum'];
+	    networkColumns = ['costSum', 'NPVSum'];
+	    graphTitle = 'TOTAL VALUES';
+	  }
+	  fill(50);
+  }
+  else {
+    onSum = false;
+  }
+  if(sumClicked){
+    fill(250);
+  }
+  triangle(widthScreen - horizontalMargin - (horizontalMargin/4)+20,heightScreen/2-50+50,
+           widthScreen - horizontalMargin - (horizontalMargin/4)+20,heightScreen/2-50+50+20,
+           widthScreen - horizontalMargin - (horizontalMargin/4),heightScreen/2-50+50+10);
+  // rect(widthScreen - horizontalMargin - (horizontalMargin/4), heightScreen/2+50, 20, 20);
+  noStroke();
+  fill(200);
+  textStyle(NORMAL);
+  textAlign(LEFT,CENTER);
+  textSize(16);
+  text('TOTAL', widthScreen - horizontalMargin - (horizontalMargin/4) + 30, heightScreen/2-50+50+10);
+  stroke(200);
+  strokeWeight(1);
+  line(widthScreen - horizontalMargin - (horizontalMargin/4)-20,heightScreen/2-10+50+10,
+       widthScreen - horizontalMargin - (horizontalMargin/4)-20+150,heightScreen/2-10+50+10)
+}
+
+function filterNetworkStatus(){
+  stroke(200);
+  strokeWeight(1);
+  noFill();
+  if ((mouseX > widthScreen - horizontalMargin - (horizontalMargin/4)) && 
+      (mouseX < widthScreen - horizontalMargin - (horizontalMargin/4) + 20) && 
+      (mouseY > heightScreen/2+70+10) && (mouseY < heightScreen/2+70+10+20)){
+	  fill(50);
+	}
+	if(onNetworkBool){
+    line((widthScreen - horizontalMargin - (horizontalMargin/4)),
+        heightScreen/2+70+10,
+        (widthScreen - horizontalMargin - (horizontalMargin/4) + 20),
+        heightScreen/2+70+10+20);
+    line((widthScreen - horizontalMargin - (horizontalMargin/4) + 20),
+        heightScreen/2+70+10,
+        (widthScreen - horizontalMargin - (horizontalMargin/4)),
+        heightScreen/2+70+10+20);
+  }
+  rect(widthScreen - horizontalMargin - (horizontalMargin/4), heightScreen/2+70+10, 20, 20);
+  textAlign(LEFT,CENTER);
+  textStyle(NORMAL);
+  textSize(16);
+  noStroke();
+  fill(200);
+  text('On Network', widthScreen - horizontalMargin - (horizontalMargin/4) + 30, heightScreen/2+70+10+10);
+}
+
+function mapPrevious(i,j,lineY,rectX){
+	prevVals = overviewData.getColumn(barColumns[i]);
+	prevVal = map(prevVals[j],0,max(prevVals),lineY[1],lineY[0]);
+	strokeWeight(4);
+	stroke(230);
+	fill(barColors[j]);
+	rect(rectX[0],prevVal-spaceBetweenGraphs-graphHeight,rectX[1]-rectX[0],lineY[1]-1-prevVal);
+}
+
+function mapAfter(i,j,lineY,rectX){
+	prevVals = overviewData.getColumn(barColumns[i]);
+	prevVal = map(prevVals[j],0,max(prevVals),lineY[1],lineY[0]);
+	strokeWeight(4);
+	stroke(230);
+	fill(barColors[j]);
+	rect(rectX[0],prevVal+spaceBetweenGraphs+graphHeight,rectX[1]-rectX[0],lineY[1]-1-prevVal);
 }
