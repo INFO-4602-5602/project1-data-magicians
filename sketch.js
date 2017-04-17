@@ -8,14 +8,14 @@ var numMarkets;
 
 var widthScreen = 1300;
 var heightScreen = 700;
-  
+
 var verticalMargin;
 var horizontalMargin;
 var spaceBetweenGraphs;
 var spaceBetweenBars;
 var barWidth;
 var yAxisLabel;
-  
+
 var graphHeight;
 var graphWidth;
 
@@ -43,7 +43,7 @@ function preload() {
 function setup() {
   createCanvas(widthScreen,heightScreen);
   background(100);
-    
+
   //set sizes to be interactive with window size
   verticalMargin = height/12;
   horizontalMargin = width/8;
@@ -53,9 +53,9 @@ function setup() {
   graphWidth = width-2*width/6;
   spaceBetweenBars = graphWidth/20;
   barWidth = (graphWidth-spaceBetweenBars*4)/3;
-  
+
   numMarkets = data.getColumn('Market').length;
-  
+
 }
 
 function draw() {
@@ -67,8 +67,8 @@ function draw() {
   textStyle(NORMAL);
   text(graphTitle, widthScreen/2.2, heightScreen - (heightScreen/1.07));
   pop();
-	
-  var lineY = [verticalMargin+15,verticalMargin+graphHeight]; 
+
+  var lineY = [verticalMargin+15,verticalMargin+graphHeight];
 
   //intialize filter boxes
   filterAvg();
@@ -76,11 +76,11 @@ function draw() {
   filterSum();
   //filterOpportunity();
   filterNetworkStatus();
-    
+
   for(i=0; i<numGraphs; i++){
-      
+
     // initialize the bar titles
-    textSize(14);  
+    textSize(14);
     fill(255);
 	if (i==1){
     push();
@@ -92,7 +92,7 @@ function draw() {
     text('DALLAS', horizontalMargin+spaceBetweenBars+barWidth+spaceBetweenBars+barWidth+spaceBetweenBars+barWidth/2, lineY[1] + 30);
 	pop();
 	}
-	  
+
     if (i==0){
 		push();
      	translate(yAxisLabel,heightScreen/4);
@@ -102,7 +102,7 @@ function draw() {
      	textSize(22);
      	textStyle(NORMAL);
      	text('BUILDING COST',0,0);
-     	pop();	
+     	pop();
     }
     else if (i==1){
 		push();
@@ -113,39 +113,39 @@ function draw() {
      	textSize(22);
      	textStyle(NORMAL);
      	text('NET PRESENT VALUE',0,0);
-     	pop();	
+     	pop();
     }
-	      
+
     //make lines for axes
     strokeWeight(1);
     stroke(0);
     line(horizontalMargin,lineY[0],horizontalMargin,lineY[1]);
     line(horizontalMargin,lineY[1],horizontalMargin+graphWidth,lineY[1]);
-	
+
 	//add graph tick
 	strokeWeight(1);
 	stroke(0);
 	line(horizontalMargin-5,lineY[1],horizontalMargin,lineY[1]);
 	textStyle(NORMAL);
     text('0',horizontalMargin-15,lineY[1]);
-	line(horizontalMargin-5,lineY[0],horizontalMargin,lineY[0]);	 
-      
+	line(horizontalMargin-5,lineY[0],horizontalMargin,lineY[0]);
+
     //draw bars and implement interaction
 
     var vals = data.getColumn(barColumns[i]);
 	//var oppVals = data.getColumn(oppColumns[i]);
 	var networkVals = onNetData.getColumn(networkColumns[i]);
-    
+
 	var rectX = [horizontalMargin+spaceBetweenBars,
                  horizontalMargin+spaceBetweenBars+barWidth];
-	
+
 	//add y axis label
 	push();
 	fill(255);
 	textAlign(RIGHT);
 	text(max(vals),horizontalMargin-15,lineY[0]+5);
 	pop();
-      
+
     for(j=0; j<numMarkets; j++){
       var val = map(vals[j],0,max(vals),lineY[1],lineY[0]);
 	  //var oppVal = map(oppVals[j],0,max(vals),lineY[1],lineY[0]);
@@ -174,11 +174,11 @@ function draw() {
 		  else if (i==0){
 			mapAfter(i+1,j,lineY,rectX);
 		  }
-		  
+
 	  }
       //rect(rectX[0],val,rectX[1]-rectX[0],lineY[1]-1-val);
 	  pop();
-	  
+
 //	  draw opportunity bars if it is filled
 //      if (opportunityFilterBool == true){
 //		  fill(rgbColors[j]);
@@ -194,7 +194,7 @@ function draw() {
 //		  rect(rectX[0],oppVal,rectX[1]-rectX[0],lineY[1]-1-oppVal);
 //		  pop();
 //	  }
-//		
+//
 	  if (onNetworkBool == true){
 		  fill(rgbColors[j]);
 		  noStroke();
@@ -214,18 +214,18 @@ function draw() {
 		  	  textStyle(NORMAL);
 		  	  text(vals[j]+ ', ' +networkVals[j],mouseX+20,mouseY+25);
 			  mapPrevious(i-1,j,lineY,rectX);
-			  
+
 		  }
 		  //rect(rectX[0],netVal,rectX[1]-rectX[0],lineY[1]-1-netVal);
 		  pop();
 	  }
-		
-	  
+
+
       //update bar locations
       rectX[0] = rectX[1]+spaceBetweenBars;
       rectX[1] = rectX[1]+spaceBetweenBars+barWidth;
     }
-    
+
     //update line and bar locations
     lineY[0] = lineY[1]+spaceBetweenGraphs;
     lineY[1] = lineY[1]+spaceBetweenGraphs+graphHeight;
@@ -341,10 +341,9 @@ function mapPrevious(i,j,lineY,rectX){
 
 function mapAfter(i,j,lineY,rectX){
 	prevVals = data.getColumn(barColumns[i]);
-	prevVal = map(prevVals[j],0,max(prevVals),lineY[1],lineY[0]);
+	prevVal = map(prevVals[j],0,min(prevVals),lineY[1],lineY[0]);
 	strokeWeight(4);
 	stroke(255);
 	fill(barColors[j]);
 	rect(rectX[0],prevVal+spaceBetweenGraphs+graphHeight,rectX[1]-rectX[0],lineY[1]-1-prevVal);
 }
-
