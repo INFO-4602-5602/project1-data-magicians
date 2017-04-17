@@ -1,0 +1,12 @@
+0 uniqueID,
+1 Lat,
+2 Long,
+3 BuildCost,
+4 ProfitNPV,
+5 Industry,
+6 ProductGroup,
+7 BuildingType,
+8 NetStatus,
+9 isClosesd,
+10 isWon,
+11 StreetAddress

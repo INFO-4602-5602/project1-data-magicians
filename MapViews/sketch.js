@@ -65,7 +65,7 @@ var markName = ['D E N V E R','A T L A N T A','D A L L A S'];
 var originalEdgeLat = [];
 var originalEdgeLon = [];
 var smallMapLeftX;
-var smallMapRightX; 
+var smallMapRightX;
 var smallMapTopY;
 var smallMapBottomY;
 var fontRegular;
@@ -103,48 +103,52 @@ var verticalDetailSpace = 100;
 var pieDiameter = 130;
 var spaceBetweenPieCenters;
 var pieCenterYs = [];
-var industry = [0.1,0.2,0.3,0.2,0.1,0.1];
-var productGroup = [0.1,0.2,0.3,0.2,0.1,0.1];
-var buildingType = [0.1,0.2,0.3,0.2,0.1,0.1];
-var industryLabels = ['cat1','cat2','cat3','cat4','cat5','cat6'];
-var productGroupLabels = ['cat1','cat2','cat3','cat4','cat5','cat6'];
-var buildingTypeLabels = ['cat1','cat2','cat3','cat4','cat5','cat6'];
-var pieSectionLabels = [industryLabels,productGroupLabels,buildingTypeLabels];
-var pieDecimalData = [industry,productGroup,buildingType];
+var pieSectionLabels = [[],[],[]];
+var pieDecimalData = [[],[],[]];
 var pieLabels = ['Industry','Product Group','Building Type'];
 var pieCounter;
+
+
+//pie chart read in data
+var buildData;
+var industryData;
+var productData;
+
+var pieDictInd = {};
+var pieDictProd = {};
 var pieDictBuildType = {};
 
+
 function preload() {
-  denver = loadTable(denverFile, "csv", "header");
-  atlanta = loadTable(atlantaFile, "csv", "header");
-  dallas = loadTable(dallasFile, "csv", "header");
-  marketData = [denver,atlanta,dallas];
-  
-  // pull images from mapbox for each city (512 x 512px)
-  mapimg_De = loadImage('https://api.mapbox.com/styles/v1/mapbox/dark-v9/static/' +
-    clon_De + ',' + clat_De + ',' + zoom_De + '/' +
-    ww + 'x' + hh +
-    '?access_token=' + access);
-    
-  mapimg_At = loadImage('https://api.mapbox.com/styles/v1/mapbox/dark-v9/static/' +
-    clon_At + ',' + clat_At + ',' + zoom_At + '/' +
-    ww + 'x' + hh +
-    '?access_token=' + access);
-    
-  mapimg_Da = loadImage('https://api.mapbox.com/styles/v1/mapbox/dark-v9/static/' +
-    clon_Da + ',' + clat_Da + ',' + zoom_Da + '/' +
-    ww + 'x' + hh +
-    '?access_token=' + access);
-  
-  fontRegular = textFont("Georgia");
+    denver = loadTable(denverFile, "csv", "header");
+    atlanta = loadTable(atlantaFile, "csv", "header");
+    dallas = loadTable(dallasFile, "csv", "header");
+    marketData = [denver,atlanta,dallas];
+
+    // pull images from mapbox for each city (512 x 512px)
+    mapimg_De = loadImage('https://api.mapbox.com/styles/v1/mapbox/dark-v9/static/' +
+                          clon_De + ',' + clat_De + ',' + zoom_De + '/' +
+                          ww + 'x' + hh +
+                          '?access_token=' + access);
+
+    mapimg_At = loadImage('https://api.mapbox.com/styles/v1/mapbox/dark-v9/static/' +
+                          clon_At + ',' + clat_At + ',' + zoom_At + '/' +
+                          ww + 'x' + hh +
+                          '?access_token=' + access);
+
+    mapimg_Da = loadImage('https://api.mapbox.com/styles/v1/mapbox/dark-v9/static/' +
+                          clon_Da + ',' + clat_Da + ',' + zoom_Da + '/' +
+                          ww + 'x' + hh +
+                          '?access_token=' + access);
+
+    fontRegular = textFont("Georgia");
 
 }
 
 function setup() {
   createCanvas(1200,700);
   background(125);
-  
+
   // set spacing
   verticalSpace = ((height-mapSize)*3/5);
   horizontalSpace = (width-overviewSpace-detailSpace-mapSize)*3/4;
@@ -156,13 +160,13 @@ function setup() {
   sliderYs = [verticalSpace+mapSize/6, verticalSpace+mapSize-mapSize/6];
   originalSliderYs = [verticalSpace+mapSize/6, verticalSpace+mapSize-mapSize/6];
   sliderLineYs = [verticalSpace+mapSize/6, verticalSpace+mapSize-mapSize/6];
-  
-  // small map coords           
+
+  // small map coords
   smallMapLeftX = overviewSpace+(horizontalSpace-mapImageSize)/2;
-  smallMapRightX = overviewSpace+(horizontalSpace-mapImageSize)/2+mapImageSize; 
+  smallMapRightX = overviewSpace+(horizontalSpace-mapImageSize)/2+mapImageSize;
   smallMapTopY = verticalSpace+mapSize-mapImageSize;
   smallMapBottomY = verticalSpace+mapSize;
-               
+
   // get min/max lat/long for each market
   for(i=0; i<3; i++) {
     var centerX = mercX(clonNames[i], zoomNames[i]);
@@ -181,7 +185,7 @@ function setup() {
 }
 
 function draw() {
-  
+
   if(overView){
     background(75);
     if((mouseX>width/2-50) && (mouseX<width/2+50) && (mouseY>height/2-20) && (mouseY<height/2+20)){
@@ -199,7 +203,7 @@ function draw() {
     textSize(40);
     text('Bar Charts',width/2,height/2);
   }
-  
+
   if(mapView){
   // draw background rectangles
   background(125);
@@ -208,7 +212,7 @@ function draw() {
   rect(0,0,width-detailSpace,height);
   fill(75);
   rect(0,0,overviewSpace,height);
-  
+
   // draw back arrow
   noStroke();
   if((mouseX>overviewSpace-15) && (mouseX<overviewSpace) && (mouseY>35) && (mouseY<55)){
@@ -222,7 +226,7 @@ function draw() {
     fill(100);
   }
   triangle(overviewSpace,30,overviewSpace,60,overviewSpace-20,45);
-  
+
   // draw picture
   if(markets[market] === 'Denver'){
     imageMode(CORNER);
@@ -233,7 +237,7 @@ function draw() {
       zoom = zoom_De;
     }
   }
-  
+
   if(markets[market] === 'Atlanta'){
     imageMode(CORNER);
     image(mapimg_At,smallMapLeftX,smallMapTopY,mapSize/2.5,mapSize/2.5);
@@ -243,7 +247,7 @@ function draw() {
       zoom = zoom_At;
     }
   }
-  
+
   if(markets[market] === 'Dallas'){
     imageMode(CORNER);
     image(mapimg_Da,smallMapLeftX,smallMapTopY,mapSize/2.5,mapSize/2.5);
@@ -253,7 +257,7 @@ function draw() {
       zoom = zoom_Da;
     }
   }
-  
+
   // draw rectangle on image to track where map is
   strokeWeight(1);
   stroke(200);
@@ -271,20 +275,20 @@ function draw() {
                      smallMapLeftX,smallMapRightX);
   var edgeLength = rightEdgeLocX - leftEdgeLocX;
   rect(leftEdgeLocX,edgeLocY,edgeLength,edgeLength);
-  
+
   // draw rectangles for edge of map
   strokeWeight(1);
   stroke(200);
   fill(85);
   rect(overviewSpace+horizontalSpace,verticalSpace,
        mapSize,mapSize);
-  
+
   // draw slider bars
   line(sliderX,sliderLineYs[0],sliderX,sliderLineYs[1]);
   fill(200);
   isOverSlider = mouseOverASlider();
   for(i=0; i<2; i++){
-    if((mouseX>sliderX-sliderWidth/2) && (mouseX<sliderX+sliderWidth/2) && 
+    if((mouseX>sliderX-sliderWidth/2) && (mouseX<sliderX+sliderWidth/2) &&
        (mouseY>sliderYs[i]) && (mouseY<sliderYs[i]+sliderHeight)){
       stroke(75);
       onSlideri = i;
@@ -309,7 +313,7 @@ function draw() {
   textAlign(LEFT,CENTER);
   text("$"+nfc(showTextMax), sliderX+sliderWidth/2+4, sliderYs[0]+sliderHeight/2);
   text("$"+nfc(showTextMin), sliderX+sliderWidth/2+4, sliderYs[1]+sliderHeight/2);
-       
+
   // boxes for filters on map
   var boxSize = 20;
   var boxesX = overviewSpace+horizontalSpace*5/6-boxSize;
@@ -396,79 +400,124 @@ function draw() {
   strokeWeight(1);
   line(smallMapLeftX,boxesYs[1]+boxSize+20,smallMapLeftX+mapImageSize,boxesYs[1]+boxSize+20);
   line(smallMapLeftX,boxesYs[3]+boxSize+20,smallMapLeftX+mapImageSize,boxesYs[3]+boxSize+20);
-  
+
   //use web mercator equations to plot points on map
   isOverMap = mouseOverMap();
   mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom)
-  
+
   fill(200);
   textAlign(RIGHT,CENTER);
   textSize(60);
   textStyle(NORMAL);
   text(markName[market],overviewSpace+horizontalSpace+mapSize,verticalSpace/2);
 
-  if(checkBox[4]){
-    
-    textAlign(CENTER,CENTER);
-    textSize(30);
-    fill(200);
-    text('TOP 5',width-detailSpace/2,verticalDetailSpace/3);
-    
-    if(box4Counter === counter){
-      var pieDataOut = getPieData(pieDictBuildType);
-      pieSectionLabels[2] = pieDataOut[0];
-      pieDecimalData[2] = pieDataOut[1];
-      console.log(pieDictBuildType);
-    }
-    
-    var data;
-    var total;
-    var piedata = [];
-    for(m=0; m<pieCenterYs.length; m++){
-      data = decimalToDegrees(pieDecimalData[m]);
-      total = data.reduce(function(a,b){ return a+b; }, 0);
-      for(var j=0,count=0;j<data.length;j++) {
-        piedata.push([Math.PI * 2 * count / total, Math.PI * 2 * (count + data[j]) / total]);
-        count += data[j];
-      }
-      // draw pie charts
-      for(var n=0,dx=0,dy=0;n<piedata.length;n++,dx=0,dy=0) {
-        if(mouseX > (pieCenterX-pieDiameter/2) && mouseX < (pieCenterX+pieDiameter/2) && 
-           mouseY > (pieCenterYs[m]-pieDiameter/2) && mouseY < (pieCenterYs[m]+pieDiameter/2)) {
-          pieCounter = m;
-        }
-        if(mouseAngle >= piedata[n][0] && mouseAngle < piedata[n][1] && pieCounter===m && mouseX > (pieCenterX-pieDiameter/2) && mouseX < (pieCenterX+pieDiameter/2) && 
-           mouseY > (pieCenterYs[m]-pieDiameter/2) && mouseY < (pieCenterYs[m]+pieDiameter/2)) {
-          dx = Math.cos((piedata[n][0] + piedata[n][1])/2) * 10;
-          dy = Math.sin((piedata[n][0] + piedata[n][1])/2) * 10;
-          noStroke();
-          textSize(15);
-          textAlign(CENTER,TOP);
-          fill(200);
-          text((pieSectionLabels[m][n%6]+", "+pieDecimalData[m][n%6]*100+"%"),pieCenterX,pieCenterYs[m]+pieDiameter/2+15);
-          stroke(200);
-          strokeWeight(2);
-        }
-        else {
-          noStroke();
-        }
-        fill(pieColors[n%6]);
-        arc(pieCenterX + dx, pieCenterYs[m] + dy, pieDiameter, pieDiameter, piedata[n][0], piedata[n][1], PIE);
-      }
-      // draw titles
-      push()
-      translate((width-detailSpace)+(detailSpace-pieDiameter)/3,pieCenterYs[m]);
-      textSize(20);
-      textAlign(CENTER,CENTER);
-      noStroke();
-      fill(200);
-      rotate(-PI/2);
-      text(pieLabels[m],0,0)
-      pop()
-    }
-  }
 
-  counter += 1;
+      //pie chart rendering
+
+      if(checkBox[4]){
+
+
+
+
+          textAlign(CENTER,CENTER);
+          textSize(30);
+          fill(200);
+          text('TOP 5',width-detailSpace/2,verticalDetailSpace/3);
+
+          if (counter === box4Counter)
+          {
+
+
+              buildData = getPieData(pieDictBuildType);
+              industryData = getPieData(pieDictInd);
+              productData = getPieData(pieDictProd);
+
+
+              console.log(buildData);
+              console.log(industryData);
+              console.log(productData);
+
+              pieDictBuildType = {};
+              pieDictInd = {};
+              pieDictProd = {};
+          }
+
+          //build type on cost
+          //pieDecimalData[2] is values
+          //labels pieSectionLabels[2]
+          //industry, product group, buildtype
+
+
+
+
+              var data;
+              var total;
+              var piedata = [];
+
+
+          pieSectionLabels[0] = industryData[0];
+          pieDecimalData[0] = industryData[1];
+
+          pieSectionLabels[1] = productData[0];
+          pieDecimalData[1] = productData[1];
+
+
+          pieSectionLabels[2] = buildData[0];
+          pieDecimalData[2] = buildData[1];
+
+
+
+              for(m=0; m<pieCenterYs.length; m++){
+
+                  data = decimalToDegrees(pieDecimalData[m]);
+                  total = data.reduce(function(a,b){ return a+b; }, 0);
+                  for(var j=0,count=0;j<data.length;j++) {
+                      piedata.push([Math.PI * 2 * count / total, Math.PI * 2 * (count + data[j]) / total]);
+                      count += data[j];
+                  }
+
+
+
+                  // draw pie charts
+                  for(var n=0,dx=0,dy=0;n<piedata.length;n++,dx=0,dy=0) {
+                      if(mouseX > (pieCenterX-pieDiameter/2) && mouseX < (pieCenterX+pieDiameter/2) &&
+                         mouseY > (pieCenterYs[m]-pieDiameter/2) && mouseY < (pieCenterYs[m]+pieDiameter/2)) {
+                          pieCounter = m;
+                      }
+                      if(mouseAngle >= piedata[n][0] && mouseAngle < piedata[n][1] && pieCounter===m && mouseX > (pieCenterX-pieDiameter/2) && mouseX < (pieCenterX+pieDiameter/2) &&
+                         mouseY > (pieCenterYs[m]-pieDiameter/2) && mouseY < (pieCenterYs[m]+pieDiameter/2)) {
+                          dx = Math.cos((piedata[n][0] + piedata[n][1])/2) * 10;
+                          dy = Math.sin((piedata[n][0] + piedata[n][1])/2) * 10;
+                          noStroke();
+                          textSize(15);
+                          textAlign(CENTER,TOP);
+                          fill(200);
+                          text((pieSectionLabels[m][n%6]+", "+pieDecimalData[m][n%6]*100+"%"),pieCenterX,pieCenterYs[m]+pieDiameter/2+15);
+                          stroke(200);
+                          strokeWeight(2);
+                      }
+                      else {
+                          noStroke();
+                      }
+                      fill(pieColors[n%6]);
+                      arc(pieCenterX + dx, pieCenterYs[m] + dy, pieDiameter, pieDiameter, piedata[n][0], piedata[n][1], PIE);
+
+                  }
+                  // draw titles
+                  push()
+                  translate((width-detailSpace)+(detailSpace-pieDiameter)/3,pieCenterYs[m]);
+                  textSize(20);
+                  textAlign(CENTER,CENTER);
+                  noStroke();
+                  fill(200);
+                  rotate(-PI/2);
+                  text(pieLabels[m],0,0);
+                  pop();
+              }
+
+      }
+
+      counter += 1;
   }
 }
 
@@ -510,9 +559,9 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom){
         noStroke();
         radius = 5;
       }
-      if((x>-mapSize/2) && (x<mapSize/2) && (y>-mapSize/2) && 
+      if((x>-mapSize/2) && (x<mapSize/2) && (y>-mapSize/2) &&
          (y<mapSize/2)){
-        
+
         if(checkBox[2]) {
           var onoffNet = row.get('NetStatus')
           if(onoffNet === 'On Zayo Network'){
@@ -520,7 +569,7 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom){
             stroke(255,255,0);
           }
         }
-        
+
         if(checkBox[3]) {
           var onoffNet = row.get('isClosed')
           if(onoffNet){
@@ -528,7 +577,7 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom){
             stroke(252, 118, 35);
           }
         }
-        
+
         if(checkBox[0]){
           var profit = row.get('ProfitNPV');
           profit = profit.replace(",","");
@@ -540,7 +589,7 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom){
             // append(pieRowIndicies,i);
           }
         }
-      
+
         if(checkBox[1]){
           var cost = row.get('BuildCost');
           cost = cost.replace(",","");
@@ -549,19 +598,50 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom){
             val = int(map(cost,0,originalMaxCost,0,255));
             fill(255,val,255,150);
             ellipse(x, y, radius);
-            var btype = row.get('BuildingType')
+              var btype = row.get('BuildingType');
+              var prodRow = row.get('ProductGroup');
+              var indRow = row.get('Industry');
 
-                    if (btype in pieDictBuildType)
-                    {
-                        pieDictBuildType[btype] += 1;
-                    }
 
-                    else {pieDictBuildType[btype] = 1}
-            
+              if (box4Counter === counter)
+              {
+
+                  if (btype in pieDictBuildType)
+                  {
+                      pieDictBuildType[btype] += 1;
+
+                  }
+
+                  else {pieDictBuildType[btype] = 1}
+
+
+                  if (indRow in pieDictInd)
+                  {
+                      pieDictInd[indRow] += 1;
+
+                  }
+
+                  else {pieDictInd[indRow] = 1}
+
+
+
+                  if (prodRow in pieDictProd)
+                  {
+                      pieDictProd[prodRow] += 1;
+
+                  }
+
+                  else {pieDictProd[prodRow] = 1}
+
+
+              }
+
+
           }
         }
-    }
-    
+
+      }
+
     if ((mouseX-mapCenterX <= x+2) && (mouseX-mapCenterX >= x-2) &&
          (mouseY-mapCenterY <= y+2) && (mouseY-mapCenterY >= y-2)){
         if(onDoti.length===1){
@@ -592,7 +672,7 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom){
         }
       }
   }
-  
+
   pop();
   return;
 }
@@ -630,7 +710,7 @@ function invMercY(y,zoom,cy) {
 function mouseWheel(event){
   if(isOverMap){
     var amount = map(event.delta,-5000,5000,-5,5);
-    
+
     // check if new lat and long edges are in range
     var centerX = mercX(clon, zoom+amount);
     var centerY = mercY(clat, zoom+amount);
@@ -638,7 +718,7 @@ function mouseWheel(event){
     var bottomEdgeLat = invMercY(mapSize/2.5,zoom+amount,centerY);
     var leftEdgeLon = invMercX(-mapSize/2.5,zoom+amount,centerX);
     var rightEdgeLon = invMercX(mapSize/2.5,zoom+amount,centerX);
-    
+
     var topEdgeLocY = map(topEdgeLat,originalEdgeLat[market],(clatNames[market]-originalEdgeLat[market])*2+originalEdgeLat[market],
                      smallMapTopY,smallMapBottomY);
     var bottomEdgeLocY = map(bottomEdgeLat,originalEdgeLat[market],(clatNames[market]-originalEdgeLat[market])*2+originalEdgeLat[market],
@@ -647,9 +727,9 @@ function mouseWheel(event){
                      smallMapLeftX,smallMapRightX);
     var rightEdgeLocX = map(rightEdgeLon,originalEdgeLon[market],(clonNames[market]-originalEdgeLon[market])*2+originalEdgeLon[market],
                      smallMapLeftX,smallMapRightX);
-    
-    if((leftEdgeLocX >= smallMapLeftX) && (rightEdgeLocX <= smallMapRightX) && 
-       (topEdgeLocY >= smallMapTopY) && (bottomEdgeLocY <= smallMapBottomY) && 
+
+    if((leftEdgeLocX >= smallMapLeftX) && (rightEdgeLocX <= smallMapRightX) &&
+       (topEdgeLocY >= smallMapTopY) && (bottomEdgeLocY <= smallMapBottomY) &&
        ((zoom+amount) >= zoomNames[market])){
       zoom += amount;
     }
@@ -664,14 +744,14 @@ function mousePressed() {
   else{
     locked = false;
   }
-  
+
   if(isOverSlider){
     sliderLocked = true;
   }
   else{
     sliderLocked = false;
   }
-  
+
   xOffset = mouseX;
   yOffset = mouseY;
 }
@@ -680,7 +760,7 @@ function mouseDragged() {
   if(locked){
     var amountX = map(xOffset-mouseX,-100,100,-0.1,0.1);
     var amountY = map(yOffset-mouseY,100,-100,-0.1,0.1);
-    
+
     // check if new lat and long edges are in range
     var centerX = mercX(clon+amountX, zoom);
     var centerY = mercY(clat+amountY, zoom);
@@ -688,78 +768,78 @@ function mouseDragged() {
     var bottomEdgeLat = invMercY(mapSize/2.5,zoom,centerY);
     var leftEdgeLon = invMercX(-mapSize/2.5,zoom,centerX);
     var rightEdgeLon = invMercX(mapSize/2.5,zoom,centerX);
-    
+
     var topEdgeLocY = map(topEdgeLat,originalEdgeLat[market],(clatNames[market]-originalEdgeLat[market])*2+originalEdgeLat[market],
-                     smallMapTopY,smallMapBottomY);
+                          smallMapTopY,smallMapBottomY);
     var bottomEdgeLocY = map(bottomEdgeLat,originalEdgeLat[market],(clatNames[market]-originalEdgeLat[market])*2+originalEdgeLat[market],
                      smallMapTopY,smallMapBottomY);
     var leftEdgeLocX = map(leftEdgeLon,originalEdgeLon[market],(clonNames[market]-originalEdgeLon[market])*2+originalEdgeLon[market],
                      smallMapLeftX,smallMapRightX);
     var rightEdgeLocX = map(rightEdgeLon,originalEdgeLon[market],(clonNames[market]-originalEdgeLon[market])*2+originalEdgeLon[market],
                      smallMapLeftX,smallMapRightX);
-    
-    if((leftEdgeLocX >= smallMapLeftX) && (rightEdgeLocX <= smallMapRightX) && 
+
+    if((leftEdgeLocX >= smallMapLeftX) && (rightEdgeLocX <= smallMapRightX) &&
        (topEdgeLocY >= smallMapTopY) && (bottomEdgeLocY <= smallMapBottomY)){
-      clat += amountY;
+        clat += amountY;
       clon += amountX;
     }
   }
-  
+
   if(sliderLocked){
-    if(onSlideri === 0){
-      var checkProfit = map(mouseY,originalSliderYs[0],originalSliderYs[1],
+      if(onSlideri === 0){
+          var checkProfit = map(mouseY,originalSliderYs[0],originalSliderYs[1],
+                                originalMaxProfit,originalMinProfit);
+          var checkCost = map(mouseY,originalSliderYs[0],originalSliderYs[1],
+                              originalMaxCost,originalMinCost);
+          if(checkBox[0] && (checkProfit>minProfit) && (checkProfit<=originalMaxProfit)) {
+              maxProfit = int(checkProfit);
+              sliderYs[0] = mouseY;
+              maxCost = int(checkCost);
+          }
+          if(checkBox[1] && (checkCost>minCost) && (checkCost<=originalMaxCost)) {
+              maxProfit = int(checkProfit);
+              sliderYs[0] = mouseY;
+              maxCost = int(checkCost);
+          }
+          if(mouseY<originalSliderYs[0]){
+              maxProfit = originalMaxProfit;
+              maxCost = originalMaxCost;
+          }
+      }
+      else if(onSlideri === 1){
+          checkProfit = map(mouseY,originalSliderYs[0],originalSliderYs[1],
                             originalMaxProfit,originalMinProfit);
-      var checkCost = map(mouseY,originalSliderYs[0],originalSliderYs[1],
-                           originalMaxCost,originalMinCost);
-      if(checkBox[0] && (checkProfit>minProfit) && (checkProfit<=originalMaxProfit)) {
-        maxProfit = int(checkProfit);
-        sliderYs[0] = mouseY;
-        maxCost = int(checkCost);
+          checkCost = map(mouseY,originalSliderYs[0],originalSliderYs[1],
+                          originalMaxCost,originalMinCost);
+          if(checkBox[0] && (checkProfit<maxProfit) && (checkProfit>=originalMinProfit)) {
+              minProfit = int(checkProfit);
+              sliderYs[1] = mouseY;
+              minCost = int(checkCost);
+          }
+          if(checkBox[1] && (checkCost<maxCost) && (checkCost>=originalMinCost)) {
+              minProfit = int(checkProfit);
+              sliderYs[1] = mouseY;
+              minCost = int(checkCost);
+          }
+          if(mouseY>originalSliderYs[1]){
+              minProfit = originalMinProfit;
+              minCost = originalMinCost;
+          }
       }
-      if(checkBox[1] && (checkCost>minCost) && (checkCost<=originalMaxCost)) {
-        maxProfit = int(checkProfit);
-        sliderYs[0] = mouseY;
-        maxCost = int(checkCost);
+      else if(onSlideri === 0 && checkBox[1]){
+          var checkCost = map(mouseY,sliderYs[0],sliderYs[1],maxCost,minCost);
+          if((checkCost>minCost) && (checkCost<=originalMaxCost)) {
+              maxCost = int(checkCost);
+              sliderYs[0] = mouseY;
+          }
       }
-      if(mouseY<originalSliderYs[0]){
-        maxProfit = originalMaxProfit;
-        maxCost = originalMaxCost;
+      else if(onSlideri === 1 && checkBox[1]){
+          checkCost = map(mouseY,sliderYs[0],sliderYs[1],maxCost,minCost);
+          if((checkCost<maxCost) && (checkCost>=originalMinCost)) {
+              minCost = int(checkCost);
+              sliderYs[1] = mouseY;
+          }
       }
-    }
-    else if(onSlideri === 1){
-      checkProfit = map(mouseY,originalSliderYs[0],originalSliderYs[1],
-                         originalMaxProfit,originalMinProfit);
-      checkCost = map(mouseY,originalSliderYs[0],originalSliderYs[1],
-                         originalMaxCost,originalMinCost);
-      if(checkBox[0] && (checkProfit<maxProfit) && (checkProfit>=originalMinProfit)) {
-        minProfit = int(checkProfit);
-        sliderYs[1] = mouseY;
-        minCost = int(checkCost);
-      }
-      if(checkBox[1] && (checkCost<maxCost) && (checkCost>=originalMinCost)) {
-        minProfit = int(checkProfit);
-        sliderYs[1] = mouseY;
-        minCost = int(checkCost);
-      }
-      if(mouseY>originalSliderYs[1]){
-        minProfit = originalMinProfit;
-        minCost = originalMinCost;
-      }
-    }
-    else if(onSlideri === 0 && checkBox[1]){
-      var checkCost = map(mouseY,sliderYs[0],sliderYs[1],maxCost,minCost);
-      if((checkCost>minCost) && (checkCost<=originalMaxCost)) {
-        maxCost = int(checkCost);
-        sliderYs[0] = mouseY;
-      }
-    }
-    else if(onSlideri === 1 && checkBox[1]){
-      checkCost = map(mouseY,sliderYs[0],sliderYs[1],maxCost,minCost);
-      if((checkCost<maxCost) && (checkCost>=originalMinCost)) {
-        minCost = int(checkCost);
-        sliderYs[1] = mouseY;
-      }
-    }
   }
 }
 
@@ -768,12 +848,12 @@ function mouseReleased() {
 }
 
 function mouseOverMap() {
-  if(((mouseX>overviewSpace+horizontalSpace) && 
+  if(((mouseX>overviewSpace+horizontalSpace) &&
      (mouseX<overviewSpace+horizontalSpace+mapSize) &&
-     (mouseY>verticalSpace) && 
-     (mouseY<verticalSpace+mapSize))) { 
-     return true;
-     }
+      (mouseY>verticalSpace) &&
+     (mouseY<verticalSpace+mapSize))) {
+      return true;
+  }
   else
     return false;
 }
@@ -788,11 +868,11 @@ function mouseOverBox(boxX,boxY,boxSize) {
 }
 
 function mouseOverASlider() {
-  if(((mouseX>sliderX-sliderWidth/2) && (mouseX<sliderX+sliderWidth/2) && 
-       (mouseY>sliderYs[0]) && (mouseY<sliderYs[0]+sliderHeight)) || 
-       ((mouseX>sliderX-sliderWidth/2) && (mouseX<sliderX+sliderWidth/2) && 
-       (mouseY>sliderYs[1]) && (mouseY<sliderYs[1]+sliderHeight))){
-         return true;
+  if(((mouseX>sliderX-sliderWidth/2) && (mouseX<sliderX+sliderWidth/2) &&
+       (mouseY>sliderYs[0]) && (mouseY<sliderYs[0]+sliderHeight)) ||
+     ((mouseX>sliderX-sliderWidth/2) && (mouseX<sliderX+sliderWidth/2) &&
+        (mouseY>sliderYs[1]) && (mouseY<sliderYs[1]+sliderHeight))){
+      return true;
        }
   else {
     return false;
@@ -815,11 +895,6 @@ function mouseMoved() {
 function getPieData(dict)
 {
     //takes dictionary and gives you percents with labels that share index
-        /*
-          var pieDictIndustry = {}
-          var pieDictProdGroup = {}
-          var pieDictBuildType = {}
-        */
 
     var toSort = [];
     var names = [];
@@ -853,10 +928,10 @@ function getPieData(dict)
         if (i < 5)
         {
             names.push(sorted[i][0]);
-            values.push((sorted[i][1] / sum))
+            values.push((sorted[i][1] / sum).toFixed(3));
         }
 
-        else if (i = 5)
+        else if (i === 5)
         {
             names.push("Other")
             othersSum += sorted[i][1]
@@ -868,6 +943,6 @@ function getPieData(dict)
         }
 
     }
-    values[5] =(othersSum / sum) ;
+    values[5] = (othersSum / sum).toFixed(3);
     return [names, values]
 }
