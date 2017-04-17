@@ -11,19 +11,19 @@
 
 
 <h2>How to Run:</h2>
-Open the index.html file in a web browser. If using Chrome, you’ll have to use a local host like XAMP. Otherwise, it should be able to open in Firefox fine. 
+Open the index.html found in the MapViews directory file in a web browser. The javascript file has all of our code. If using Chrome, you’ll have to use a local host like XAMPP. Otherwise, it should be able to open in Firefox fine. 
 
 
 
 <h2>Information About Visualizations:</h2>
 
-We built three different visualizations thate are interlinked and interactive. These include a barchart, a map view, and piecharts. We included a handful of interactive elements that allow the user to broaden or narrow the scope of the data in each vis, as well as hide or show subsets of the data. 
+We built three different visualizations that are interlinked and interactive. These include a barchart, a map view, and piecharts. We included a handful of interactive elements that allow the user to broaden or narrow the scope of the data in each vis, as well as hide or show subsets of the data. 
 
 <h4>Barchart</h4> 
-The barchart window contains statistics about building costs and net present value (NPV) for each market. You can filter by total(sum), median, or average. In addition, you can filter by locations that are already on network, or ones that are opportunities. Filter by clicking the relevant boxes. 
+The barchart window contains statistics about building costs and net present value (NPV) for each market. You can filter by total(sum), median, or average. In addition, you can filter by locations that are already on network. Filter by clicking the relevant boxes. 
 
 <h4>Map View</h4>
-The map view window also contains information about building costs and NPV. You can select between viewing profits or costs, and then filter by ‘on network’ or ‘open opportunity’. Each point on the map represents a building, and hovering over gives more information about the buildings location. You can zoom in to narrow the scope of the map, and can pan by holding your cursor on a point and dragging. Clicking ‘details of selection’ generates a series of pie charts that gives statistics about industry type, product group, and building type under the currently selected view. 
+The map view window also contains information about building costs and NPV. You can select between viewing profits or costs, and then filter by ‘on network’ or ‘open opportunity’ (though this one doesn't do anything based on the data we pulled). Each point on the map represents a building, and hovering over gives more information about the buildings location. You can zoom in to narrow the scope of the map, and can pan by holding your cursor on a point and dragging. Clicking ‘details of selection’ generates a series of pie charts that gives statistics about industry type, product group, and building type under the currently selected view. 
 
 <h4>Piechart</h4>
 The piechart window gives descriptive information about the building types, product groups, and industries present in the current map view. This is expressed as a percent of the total sum of each respective category. Hovering over a pie slice will cause it to separate, and the selected piece becomes highlighted. A popup will appear that contains the percentage and categorical information of the selected slice. 
