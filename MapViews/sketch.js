@@ -103,16 +103,18 @@ var verticalDetailSpace = 100;
 var pieDiameter = 130;
 var spaceBetweenPieCenters;
 var pieCenterYs = [];
-var industry = [0.1,0.2,0.3,0.2,0.1,0.1];
-var productGroup = [0.1,0.2,0.3,0.2,0.1,0.1];
-var buildingType = [0.1,0.2,0.3,0.2,0.1,0.1];
-var industryLabels = ['cat1','cat2','cat3','cat4','cat5','cat6'];
-var productGroupLabels = ['cat1','cat2','cat3','cat4','cat5','cat6'];
-var buildingTypeLabels = ['cat1','cat2','cat3','cat4','cat5','cat6'];
-var pieSectionLabels = [industryLabels,productGroupLabels,buildingTypeLabels];
-var pieDecimalData = [industry,productGroup,buildingType];
+var pieSectionLabels = [[],[],[]];
+var pieDecimalData = [[],[],[]];
 var pieLabels = ['Industry','Product Group','Building Type'];
 var pieCounter;
+
+//pie chart read in data
+var buildData;
+var industryData;
+var productData;
+
+var pieDictInd = {};
+var pieDictProd = {};
 var pieDictBuildType = {};
 
 // variables for bar charts
@@ -683,6 +685,7 @@ function draw() {
   textStyle(NORMAL);
   text(markName[market],overviewSpace+horizontalSpace+mapSize,verticalSpace/2);
 
+  // pie chart rendering
   if(checkBox[4]){
     
     textAlign(CENTER,CENTER);
@@ -690,12 +693,23 @@ function draw() {
     fill(200);
     text('TOP 5',width-detailSpace/2,verticalDetailSpace/3);
     
-    // if(box4Counter === counter){
-    //   var pieDataOut = getPieData(pieDictBuildType);
-    //   pieSectionLabels[2] = pieDataOut[0];
-    //   pieDecimalData[2] = pieDataOut[1];
-    //   console.log(pieDictBuildType);
-    // }
+    if (counter === box4Counter) {
+
+      buildData = getPieData(pieDictBuildType);
+      industryData = getPieData(pieDictInd);
+      productData = getPieData(pieDictProd);
+
+      pieDictBuildType = {};
+      pieDictInd = {};
+      pieDictProd = {};
+    }
+
+    pieSectionLabels[0] = industryData[0];
+    pieDecimalData[0] = industryData[1];
+    pieSectionLabels[1] = productData[0];
+    pieDecimalData[1] = productData[1];
+    pieSectionLabels[2] = buildData[0];
+    pieDecimalData[2] = buildData[1];
     
     var data;
     var total;
@@ -704,34 +718,48 @@ function draw() {
       data = decimalToDegrees(pieDecimalData[m]);
       total = data.reduce(function(a,b){ return a+b; }, 0);
       for(var j=0,count=0;j<data.length;j++) {
-        piedata.push([Math.PI * 2 * count / total, Math.PI * 2 * (count + data[j]) / total]);
-        count += data[j];
+          piedata.push([Math.PI * 2 * count / total, Math.PI * 2 * (count + data[j]) / total]);
+          count += data[j];
       }
+    }
       // draw pie charts
+      var m = 0;
       for(var n=0,dx=0,dy=0;n<piedata.length;n++,dx=0,dy=0) {
-        if(mouseX > (pieCenterX-pieDiameter/2) && mouseX < (pieCenterX+pieDiameter/2) && 
-           mouseY > (pieCenterYs[m]-pieDiameter/2) && mouseY < (pieCenterYs[m]+pieDiameter/2)) {
-          pieCounter = m;
+        if(n<5){
+          m = 0;
         }
-        if(mouseAngle >= piedata[n][0] && mouseAngle < piedata[n][1] && pieCounter===m && mouseX > (pieCenterX-pieDiameter/2) && mouseX < (pieCenterX+pieDiameter/2) && 
-           mouseY > (pieCenterYs[m]-pieDiameter/2) && mouseY < (pieCenterYs[m]+pieDiameter/2)) {
-          dx = Math.cos((piedata[n][0] + piedata[n][1])/2) * 10;
-          dy = Math.sin((piedata[n][0] + piedata[n][1])/2) * 10;
-          noStroke();
-          textSize(15);
-          textAlign(CENTER,TOP);
-          fill(200);
-          text((pieSectionLabels[m][n%6]+", "+pieDecimalData[m][n%6]*100+"%"),pieCenterX,pieCenterYs[m]+pieDiameter/2+15);
-          stroke(200);
-          strokeWeight(2);
+        else if(n<11){
+          m = 1;
         }
-        else {
-          noStroke();
+        else if(n<17){
+          m = 2;
         }
-        fill(pieColors[n%6]);
-        arc(pieCenterX + dx, pieCenterYs[m] + dy, pieDiameter, pieDiameter, piedata[n][0], piedata[n][1], PIE);
-      }
-      // draw titles
+        
+          if(mouseX > (pieCenterX-pieDiameter/2) && mouseX < (pieCenterX+pieDiameter/2) &&
+            mouseY > (pieCenterYs[m]-pieDiameter/2) && mouseY < (pieCenterYs[m]+pieDiameter/2)) {
+              pieCounter = m;
+          }
+          if(mouseAngle >= piedata[n][0] && mouseAngle < piedata[n][1] &&
+            mouseX > (pieCenterX-pieDiameter/2) && mouseX < (pieCenterX+pieDiameter/2) &&
+            mouseY > (pieCenterYs[m]-pieDiameter/2) && mouseY < (pieCenterYs[m]+pieDiameter/2)) {
+              dx = Math.cos((piedata[n][0] + piedata[n][1])/2) * 10;
+              dy = Math.sin((piedata[n][0] + piedata[n][1])/2) * 10;
+              noStroke();
+              textSize(15);
+              textAlign(CENTER,TOP);
+              fill(200);
+              text((pieSectionLabels[m][n%6]+", "+pieDecimalData[m][n%6]*100+"%"),
+                  pieCenterX,pieCenterYs[m]+pieDiameter/2+15);
+              stroke(200);
+              strokeWeight(2);
+          }
+          else {
+              noStroke();
+          }
+          fill(pieColors[n%6]);
+          arc(pieCenterX + dx, pieCenterYs[m] + dy, pieDiameter, pieDiameter, 
+              piedata[n][0], piedata[n][1], PIE);
+              // console.log(piedata)
       push()
       translate((width-detailSpace)+(detailSpace-pieDiameter)/3,pieCenterYs[m]);
       textSize(20);
@@ -739,10 +767,10 @@ function draw() {
       noStroke();
       fill(200);
       rotate(-PI/2);
-      text(pieLabels[m],0,0)
-      pop()
+      text(pieLabels[m],0,0);
+      pop();
+      }
     }
-  }
 
   counter += 1;
   }
@@ -813,7 +841,41 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom){
             var val = int(map(profit,0,originalMaxProfit,0,255));
             fill(val,255,255,150);
             ellipse(x, y, radius);
-            // append(pieRowIndicies,i);
+            var btype = row.get('BuildingType');
+                var prodRow = row.get('ProductGroup');
+                var indRow = row.get('Industry');
+
+                if (box4Counter === counter)
+                {
+
+                    if (btype in pieDictBuildType)
+                    {
+                        pieDictBuildType[btype] += 1;
+
+                    }
+
+                    else {pieDictBuildType[btype] = 1}
+
+
+                    if (indRow in pieDictInd)
+                    {
+                        pieDictInd[indRow] += 1;
+
+                    }
+
+                    else {pieDictInd[indRow] = 1}
+
+
+
+                    if (prodRow in pieDictProd)
+                    {
+                        pieDictProd[prodRow] += 1;
+
+                    }
+
+                    else {pieDictProd[prodRow] = 1}
+
+                }
           }
         }
       
@@ -826,14 +888,25 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom){
             fill(255,val,255,150);
             ellipse(x, y, radius);
             var btype = row.get('BuildingType')
+            var prodRow = row.get('ProductGroup');
+            var indRow = row.get('Industry');
 
-                    if (btype in pieDictBuildType)
-                    {
-                        pieDictBuildType[btype] += 1;
-                    }
+            if (box4Counter === counter) {
+              if (btype in pieDictBuildType) {
+                pieDictBuildType[btype] += 1;
+              }
+              else {pieDictBuildType[btype] = 1}
 
-                    else {pieDictBuildType[btype] = 1}
-            
+              if (indRow in pieDictInd){
+                pieDictInd[indRow] += 1;
+              }
+              else {pieDictInd[indRow] = 1}
+
+              if (prodRow in pieDictProd){
+                pieDictProd[prodRow] += 1;
+              }
+              else {pieDictProd[prodRow] = 1}
+            }
           }
         }
     }
@@ -1140,11 +1213,6 @@ function mouseMoved() {
 function getPieData(dict)
 {
     //takes dictionary and gives you percents with labels that share index
-        /*
-          var pieDictIndustry = {}
-          var pieDictProdGroup = {}
-          var pieDictBuildType = {}
-        */
 
     var toSort = [];
     var names = [];
@@ -1178,10 +1246,10 @@ function getPieData(dict)
         if (i < 5)
         {
             names.push(sorted[i][0]);
-            values.push((sorted[i][1] / sum))
+            values.push((sorted[i][1] / sum).toFixed(3));
         }
 
-        else if (i = 5)
+        else if (i === 5)
         {
             names.push("Other")
             othersSum += sorted[i][1]
@@ -1193,7 +1261,7 @@ function getPieData(dict)
         }
 
     }
-    values[5] =(othersSum / sum) ;
+    values[5] = (othersSum / sum).toFixed(3);
     return [names, values]
 }
 
