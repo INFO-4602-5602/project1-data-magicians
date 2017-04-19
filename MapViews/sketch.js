@@ -247,7 +247,10 @@ function draw() {
     textSize(35);
     textAlign(CENTER);
     textStyle(NORMAL);
-    text(graphTitle, widthScreen/2.2, heightScreen - (heightScreen/1.07));
+    noStroke();
+    // text(graphTitle, widthScreen/2.2, heightScreen - (heightScreen/1.07));
+    text('Comparison Statistics for Prospective Customers Across Markets', 
+        widthScreen/2.2, heightScreen - (heightScreen/1.07))
   	
     var lineY = [verticalMargin+15,verticalMargin+graphHeight]; 
   
@@ -327,7 +330,7 @@ function draw() {
       for(j=0; j<numMarkets; j++){
         var val = map(vals[j],0,max(vals),lineY[1],lineY[0]);
   	    var netVal = map(networkVals[j],0,max(vals),lineY[1],lineY[0]);
-  
+
     	  //draw rectangle
     	  fill(barColors[j]);
     	  noStroke();
@@ -342,20 +345,22 @@ function draw() {
     	    }
     		  strokeWeight(4);
     		  stroke(230);
-    		  fill(barColors[j]);
+    		  //fill(barColors[j]);
+    		  noFill();
     		  rect(rectX[0],val,rectX[1]-rectX[0],lineY[1]-1-val);
     		  noStroke();
     		  fill(200);
+    		  // make hover box
   	  	  rect(mouseX+10, mouseY+10, vals[j].length*12, 20);
     		  textSize(13);
     		  fill(50);
     		  textAlign(LEFT);
     		  textStyle(NORMAL);
-    		  text(vals[j],mouseX+20,mouseY+25);
+    		  text(nfc("$"+vals[j]),mouseX+20,mouseY+25);
     		  if (i==1){
     		  	mapPrevious(i-1,j,lineY,rectX);}
     		  else if (i==0){
-    			mapAfter(i+1,j,lineY,rectX);
+    			  mapAfter(i+1,j,lineY,rectX);
   		    }
   	    }
 
@@ -374,7 +379,8 @@ function draw() {
     	    }
   			  strokeWeight(4);
   		  	stroke(255);
-  			  fill(rgbColors[j]);
+  			 // fill(rgbColors[j]);
+  			  noFill();
   			  rect(rectX[0],netVal,rectX[1]-rectX[0],lineY[1]-1-netVal);
   			  noStroke();
   			  fill(255);
