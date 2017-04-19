@@ -147,6 +147,13 @@ var onMed = false;
 var medClicked = false;
 var onSum = false;
 var sumClicked = false;
+var checkBox4zoom;
+var checkBox4clat;
+var checkBox4clon;
+var checkBox4zero;
+var checkBox4one;
+var checkBox4min;
+var checkBox4max;
 
 function preload() {
   denver = loadTable(denverFile, "csv", "header");
@@ -702,6 +709,20 @@ function draw() {
       pieDictBuildType = {};
       pieDictInd = {};
       pieDictProd = {};
+      
+      checkBox4zoom = zoom;
+      checkBox4clat = clat;
+      checkBox4clon = clon;
+      checkBox4zero = checkBox[0];
+      checkBox4one = checkBox[1];
+      if(checkBox[0]) {
+        checkBox4min = minProfit;
+        checkBox4max = maxProfit;
+      }
+      else if(checkBox[1]) {
+        checkBox4min = minCost;
+        checkBox4max = maxCost;
+      }
     }
 
     pieSectionLabels[0] = industryData[0];
@@ -722,16 +743,17 @@ function draw() {
           count += data[j];
       }
     }
+
       // draw pie charts
       var m = 0;
       for(var n=0,dx=0,dy=0;n<piedata.length;n++,dx=0,dy=0) {
-        if(n<5){
+        if(n<6){
           m = 0;
         }
-        else if(n<11){
+        else if(n<12){
           m = 1;
         }
-        else if(n<17){
+        else if(n<18){
           m = 2;
         }
         
@@ -745,10 +767,10 @@ function draw() {
               dx = Math.cos((piedata[n][0] + piedata[n][1])/2) * 10;
               dy = Math.sin((piedata[n][0] + piedata[n][1])/2) * 10;
               noStroke();
-              textSize(15);
+              textSize(12);
               textAlign(CENTER,TOP);
               fill(200);
-              text((pieSectionLabels[m][n%6]+", "+pieDecimalData[m][n%6]*100+"%"),
+              text((pieSectionLabels[m][n%6]+", "+nf(pieDecimalData[m][n%6]*100,2,1)+"%"),
                   pieCenterX,pieCenterYs[m]+pieDiameter/2+15);
               stroke(200);
               strokeWeight(2);
@@ -772,6 +794,12 @@ function draw() {
       }
     }
 
+  if((zoom != checkBox4zoom) || (clon != checkBox4clon) || (clat != checkBox4clat) || 
+     (checkBox4zero != checkBox[0]) || (checkBox4one != checkBox[1]) || (overView) ||
+     (checkBox[0] && (checkBox4min != minProfit)) || (checkBox[0] && (checkBox4max != maxProfit)) ||
+     (checkBox[1] && (checkBox4min != minCost)) || (checkBox[1] && (checkBox4max != maxCost))) {
+    checkBox[4] = false;
+    }
   counter += 1;
   }
 }
