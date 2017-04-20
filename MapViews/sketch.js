@@ -84,6 +84,7 @@ var isOverBox = false;
 var boxi = [false,false,false,false,false];
 var sliderX;
 var sliderYs;
+var sliderYsInitial;
 var originalSliderYs;
 var sliderWidth = 15;
 var sliderHeight = 10;
@@ -92,11 +93,18 @@ var onSlideri;
 var overView = true;
 var mapView = false;
 var box4Counter;
+var sliderLocked = false;
 
 // variables for pie charts
-var pieColors = ['rgb(82,70,86)','rgb(207,71,71)',
-                 'rgb(234,122,88)','rgb(228,220,203)',
-                 'rgb(77,244,255)','rgb(25,255,205)'];
+var pieColors = [['rgb(182,0,203)','rgb(137,44,148)',
+                 'rgb(114,0,127)','rgb(191,84,203)',
+                 'rgb(68,0,76)','rgb(136,0,203)'],
+                 ['rgb(79,255,126)','rgb(39,203,78)',
+                 'rgb(2,255,70)','rgb(25,127,53)',
+                 'rgb(2,204,56)','rgb(2,127,70)'],
+                 ['rgb(127,0,26)','rgb(255,76,113)',
+                 'rgb(255,0,52)','rgb(127,38,57)',
+                 'rgb(204,0,42)','rgb(255,61,34)']];
 var mouseAngle = 0, pieDelta = 0, hover = 0;
 var pieCenterX;
 var verticalDetailSpace = 100;
@@ -107,6 +115,13 @@ var pieSectionLabels = [[],[],[]];
 var pieDecimalData = [[],[],[]];
 var pieLabels = ['Industry','Product Group','Building Type'];
 var pieCounter;
+var checkBox4zoom;
+var checkBox4clat;
+var checkBox4clon;
+var checkBox4zero;
+var checkBox4one;
+var checkBox4min;
+var checkBox4max;
 
 //pie chart read in data
 var buildData;
@@ -134,11 +149,13 @@ var graphHeight;
 var graphWidth;
 var barColumns = ['costMedian', 'NPVmedian'];
 var networkColumns = ['costMedian', 'NPVmedian'];
-var barColors = ['#ff00ff','#99ff33','#00ccff'];
-var rgbColors = [[255, 179, 255],[218, 255, 179],[179, 240, 255]];
+// var barColors = ['#ff00ff','#99ff33','#00ccff'];
+var barColors = [['#004dff','#0c89e8','#0dd6ff'],
+                 ['#e8620c','#ff8700','#ffa608']];
+// var rgbColors = [[255, 179, 255],[218, 255, 179],[179, 240, 255]];
 var graphTitle = "MEDIAN VALUES";
 var onNetworkBool = false;
-var onBar = false;
+//var onBar = false;
 var prevVals;
 var prevVal;
 var onAvg = false;
@@ -147,13 +164,11 @@ var onMed = false;
 var medClicked = false;
 var onSum = false;
 var sumClicked = false;
-var checkBox4zoom;
-var checkBox4clat;
-var checkBox4clon;
-var checkBox4zero;
-var checkBox4one;
-var checkBox4min;
-var checkBox4max;
+var maxYValues = [[30000,45000],[30000,30000],[190000000,210000000]];
+var maxValNum = 0;
+var mouseOnBar = false;
+var mouseOverBarNum;
+
 
 function preload() {
   denver = loadTable(denverFile, "csv", "header");
@@ -196,6 +211,7 @@ function setup() {
   mapTextX = overviewSpace+horizontalSpace+mapSize;
   mapTextY = verticalSpace-verticalSpace/6;
   sliderX = overviewSpace+horizontalSpace+mapSize+(width-overviewSpace-detailSpace-horizontalSpace-mapSize)/4.7;
+  sliderYsInitial = [verticalSpace+mapSize/6, verticalSpace+mapSize-mapSize/6];
   sliderYs = [verticalSpace+mapSize/6, verticalSpace+mapSize-mapSize/6];
   originalSliderYs = [verticalSpace+mapSize/6, verticalSpace+mapSize-mapSize/6];
   sliderLineYs = [verticalSpace+mapSize/6, verticalSpace+mapSize-mapSize/6];
@@ -249,7 +265,7 @@ function draw() {
     textStyle(NORMAL);
     noStroke();
     // text(graphTitle, widthScreen/2.2, heightScreen - (heightScreen/1.07));
-    text('Comparison Statistics for Prospective Customers Across Markets', 
+    text('Prospective Customers Across Markets', 
         widthScreen/2.2, heightScreen - (heightScreen/1.07))
   	
     var lineY = [verticalMargin+15,verticalMargin+graphHeight]; 
@@ -314,7 +330,7 @@ function draw() {
   	  var networkVals = onNetData.getColumn(networkColumns[i]);
       var rectX = [horizontalMargin+spaceBetweenBars,
                    horizontalMargin+spaceBetweenBars+barWidth];
-                   
+      
     	//add graph ticks
     	strokeWeight(1);
     	stroke(200);
@@ -325,47 +341,53 @@ function draw() {
     	textSize(16);
     	textAlign(RIGHT,CENTER);
       text('$0',horizontalMargin-15,lineY[1]);
-    	text("$"+nfc(max(vals)),horizontalMargin-15,lineY[0]+5);
+    	text("$"+nfc(maxYValues[maxValNum][i]),horizontalMargin-15,lineY[0]+5);
         
       for(j=0; j<numMarkets; j++){
-        var val = map(vals[j],0,max(vals),lineY[1],lineY[0]);
-  	    var netVal = map(networkVals[j],0,max(vals),lineY[1],lineY[0]);
+        var val = map(vals[j],0,maxYValues[maxValNum][i],lineY[1],lineY[0]);
+  	    var netVal = map(networkVals[j],0,maxYValues[maxValNum][i],lineY[1],lineY[0]);
 
     	  //draw rectangle
-    	  fill(barColors[j]);
+    	  fill(barColors[i][j]);
     	  noStroke();
     	  rect(rectX[0],val,rectX[1]-rectX[0],lineY[1]-1-val);
+    	  mouseOverBar(rectX[0], rectX[1], val, lineY[1],j);
+    	  if(mouseOnBar && mouseOverBarNum === j){
+    		    strokeWeight(4);
+    		    stroke(230);
+    		    noFill();
+    		    rect(rectX[0],val,rectX[1]-rectX[0],lineY[1]-1-val);
+    	  }
     	  if ((mouseX > rectX[0]) && (mouseX < rectX[1]) && 
     	      (mouseY > val) && (mouseY < lineY[1])) {
+    	    //mouseOnBar = true;
     	    if(mouseIsPressed){
     	      market = j;
     	      mapView = true;
     	      overView = false;
     	      counter=-1;
     	    }
-    		  strokeWeight(4);
-    		  stroke(230);
-    		  //fill(barColors[j]);
-    		  noFill();
-    		  rect(rectX[0],val,rectX[1]-rectX[0],lineY[1]-1-val);
+    		  // make hover box
     		  noStroke();
     		  fill(200);
-    		  // make hover box
   	  	  rect(mouseX+10, mouseY+10, vals[j].length*12, 20);
     		  textSize(13);
     		  fill(50);
     		  textAlign(LEFT);
     		  textStyle(NORMAL);
     		  text(nfc("$"+vals[j]),mouseX+20,mouseY+25);
-    		  if (i==1){
-    		  	mapPrevious(i-1,j,lineY,rectX);}
-    		  else if (i==0){
-    			  mapAfter(i+1,j,lineY,rectX);
-  		    }
+    		  // if (i==1){
+    		  // 	mapPrevious(i-1,j,lineY,rectX);}
+    		  // else if (i==0){
+    			 // mapAfter(i+1,j,lineY,rectX);
+  		    // }
   	    }
+  	   // else {
+  	   //   mouseOnBar = false;
+  	   // }
 
   	  if (onNetworkBool == true){
-  		  fill(rgbColors[j]);
+  		  fill(255,130);//rgbColors[j]);
   		  noStroke();
   		  rect(rectX[0],netVal,rectX[1]-rectX[0],lineY[1]-1-netVal);
   		  // push();
@@ -389,8 +411,8 @@ function draw() {
   			  fill(100);
   			  textAlign(LEFT);
   		  	textStyle(NORMAL);
-  		  	text(vals[j]+ ', ' +networkVals[j],mouseX+20,mouseY+25);
-  			  mapPrevious(i-1,j,lineY,rectX);
+  		  	text('$'+nfc(vals[j])+ ', $' +nfc(networkVals[j]),mouseX+20,mouseY+25);
+  			 // mapPrevious(i-1,j,lineY,rectX);
   		  }
   		  //rect(rectX[0],netVal,rectX[1]-rectX[0],lineY[1]-1-netVal);
   		  // pop();
@@ -483,10 +505,10 @@ function draw() {
                  horizontalMargin+spaceBetweenBars+barWidth];
       
     for(j=0; j<numMarkets; j++){
-      var val = map(vals[j],0,max(vals),lineY[1],lineY[0]);
+      var val = map(vals[j],0,maxYValues[maxValNum][i],lineY[1],lineY[0]);
   
       //draw rectangle
-      fill(barColors[j]);
+      fill(barColors[i][j]);
       noStroke();
       rect(rectX[0],val,rectX[1]-rectX[0],lineY[1]-1-val);
     
@@ -522,6 +544,7 @@ function draw() {
       clon = clon_De;
       clat = clat_De;
       zoom = zoom_De;
+      sliderYs = sliderYsInitial;
     }
   }
   
@@ -532,6 +555,7 @@ function draw() {
       clon = clon_At;
       clat = clat_At;
       zoom = zoom_At;
+      sliderYs = sliderYsInitial;
     }
   }
   
@@ -542,6 +566,7 @@ function draw() {
       clon = clon_Da;
       clat = clat_Da;
       zoom = zoom_Da;
+      sliderYs = sliderYsInitial;
     }
   }
   
@@ -643,10 +668,12 @@ function draw() {
       boxi[i] = false;
       strokeWeight(1);
       if(checkBox[0] && i===0){
-        fill(0,255,255,100);
+        //fill(0,255,255,100);
+        fill(barColors[0][market]);
       }
       else if(checkBox[1] && i===1){
-        fill(255,0,255,100);
+        //fill(255,0,255,100);
+        fill(barColors[1][market]);
       }
       else if(checkBox[4] && i===4){
         fill(50);
@@ -697,6 +724,8 @@ function draw() {
   textSize(60);
   textStyle(NORMAL);
   text(markName[market],overviewSpace+horizontalSpace+mapSize,verticalSpace/2);
+  textSize(20);
+  text("PROSPECTIVE CUSTOMERS",overviewSpace+horizontalSpace+mapSize,verticalSpace*4/5)
 
   // pie chart rendering
   if(checkBox[4]){
@@ -704,7 +733,8 @@ function draw() {
     textAlign(CENTER,CENTER);
     textSize(30);
     fill(200);
-    text('TOP 5',width-detailSpace/2,verticalDetailSpace/3);
+    text('Account',width-detailSpace/2,verticalDetailSpace/3);
+    text('Information',width-detailSpace/2,verticalDetailSpace/3+30);
     
     if (counter === box4Counter) {
 
@@ -784,7 +814,7 @@ function draw() {
           else {
               noStroke();
           }
-          fill(pieColors[n%6]);
+          fill(pieColors[m][n%6]);
           arc(pieCenterX + dx, pieCenterYs[m] + dy, pieDiameter, pieDiameter, 
               piedata[n][0], piedata[n][1], PIE);
               // console.log(piedata)
@@ -863,7 +893,7 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom){
           var onoffNet = row.get('isClosed')
           if(onoffNet){
             strokeWeight(1);
-            stroke(252, 118, 35);
+            stroke(255, 101, 157);
           }
         }
         
@@ -872,8 +902,13 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom){
           profit = profit.replace(",","");
           profit = int(profit);
           if((profit>=minProfit) && (profit<=maxProfit)){
-            var val = int(map(profit,0,originalMaxProfit,0,255));
-            fill(val,255,255,150);
+            //var val = int(map(profit,0,originalMaxProfit,0,255));
+            //fill(val,255,255,150);
+            if(!checkBox[2]){
+              stroke(200);
+              strokeWeight(0.5);
+            }
+            fill(barColors[0][market]);
             ellipse(x, y, radius);
             var btype = row.get('BuildingType');
                 var prodRow = row.get('ProductGroup');
@@ -918,8 +953,13 @@ function mapGraphs(mapCenterX,mapCenterY,clon,clat,zoom){
           cost = cost.replace(",","");
           cost = int(cost);
           if((cost>=minCost) && (cost<=maxCost)){
-            val = int(map(cost,0,originalMaxCost,0,255));
-            fill(255,val,255,150);
+            //val = int(map(cost,0,originalMaxCost,0,255));
+            //fill(255,val,255,150);
+            if(!checkBox[2]){
+              stroke(200);
+              strokeWeight(0.5);
+            }
+            fill(barColors[1][market]);
             ellipse(x, y, radius);
             var btype = row.get('BuildingType')
             var prodRow = row.get('ProductGroup');
@@ -1319,6 +1359,7 @@ function filterAvg(){
   }
   if(avgClicked){
     fill(250);
+    maxValNum = 0;
   }
   triangle(widthScreen - horizontalMargin - (horizontalMargin/4)+20,heightScreen/2-100,
            widthScreen - horizontalMargin - (horizontalMargin/4)+20,heightScreen/2-100+20,
@@ -1351,6 +1392,7 @@ function filterMedian(){
   }
   if(medClicked){
     fill(250);
+    maxValNum = 1;
   }
   triangle(widthScreen - horizontalMargin - (horizontalMargin/4)+20,heightScreen/2-50,
            widthScreen - horizontalMargin - (horizontalMargin/4)+20,heightScreen/2-50+20,
@@ -1383,6 +1425,7 @@ function filterSum(){
   }
   if(sumClicked){
     fill(250);
+    maxValNum = 2;
   }
   triangle(widthScreen - horizontalMargin - (horizontalMargin/4)+20,heightScreen/2-50+50,
            widthScreen - horizontalMargin - (horizontalMargin/4)+20,heightScreen/2-50+50+20,
@@ -1430,18 +1473,26 @@ function filterNetworkStatus(){
 
 function mapPrevious(i,j,lineY,rectX){
 	prevVals = overviewData.getColumn(barColumns[i]);
-	prevVal = map(prevVals[j],0,max(prevVals),lineY[1],lineY[0]);
+	prevVal = map(prevVals[j],0,maxYValues[maxValNum][i],lineY[1],lineY[0]);
 	strokeWeight(4);
 	stroke(230);
-	fill(barColors[j]);
+	fill(barColors[i][j]);
 	rect(rectX[0],prevVal-spaceBetweenGraphs-graphHeight,rectX[1]-rectX[0],lineY[1]-1-prevVal);
 }
 
 function mapAfter(i,j,lineY,rectX){
 	prevVals = overviewData.getColumn(barColumns[i]);
-	prevVal = map(prevVals[j],0,max(prevVals),lineY[1],lineY[0]);
+	prevVal = map(prevVals[j],0,maxYValues[maxValNum][i],lineY[1],lineY[0]);
 	strokeWeight(4);
 	stroke(230);
-	fill(barColors[j]);
+	fill(barColors[i][j]);
 	rect(rectX[0],prevVal+spaceBetweenGraphs+graphHeight,rectX[1]-rectX[0],lineY[1]-1-prevVal);
+}
+
+function mouseOverBar(rectX0, rectX1, Y0, Y1,j){
+  if ((mouseX > rectX0) && (mouseX < rectX1) && 
+    	      (mouseY > Y0) && (mouseY < Y1)) {
+    mouseOnBar = true;
+    mouseOverBarNum = j;
+  }
 }
