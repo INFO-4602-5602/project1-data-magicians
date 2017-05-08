@@ -1,6 +1,6 @@
 <h1>Team: Data Artisans</h1>
 
-<h2>Team Roles:</h2>
+<h2>Team Members:</h2>
 
 <b>Lila:</b> Front-end/visualizations, map view with P5  <br /> 
 <b>Adam:</b> Back-end/data processing, scripting with Python <br />
